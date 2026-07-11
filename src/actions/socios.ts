@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { socios } from "@/db/schema";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function crearSocio(formData: FormData) {
     const nombre = formData.get("nombre") as string;
@@ -20,4 +21,5 @@ export async function crearSocio(formData: FormData) {
     });
 
     revalidatePath("/socios");
+    redirect("/socios");
 }
