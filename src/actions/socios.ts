@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { socios } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
 export async function crearSocio(formData: FormData) {
     const nombre = formData.get("nombre") as string;
@@ -19,6 +20,42 @@ export async function crearSocio(formData: FormData) {
         telefono,
         fechaNacimiento,
     });
+
+    revalidatePath("/socios");
+    redirect("/socios");
+}
+
+export async function editarSocio(formData: FormData) {
+    const id = Number(formData.get("id"));
+    const nombre = formData.get("nombre") as string;
+    const apellido = formData.get("apellido") as string;
+    const dni = formData.get("dni") as string;
+    const telefono = formData.get("telefono") as string;
+    const fechaNacimiento = formData.get("fechaNacimiento") as string;
+
+    await db
+        .update(socios)
+        .set({
+        nombre,
+        apellido,
+        dni,
+        telefono,
+        fechaNacimiento,
+        actualizadoEn: new Date(),
+        })
+        .where(eq(socios.id, id));
+
+    revalidatePath("/socios");
+    redirect(`/socios/${id}`);
+}
+
+export async function darDeBajaSocio(formData: FormData) {
+    const id = Number(formData.get("id"));
+
+    await db
+        .update(socios)
+        .set({ eliminadoEn: new Date() })
+        .where(eq(socios.id, id));
 
     revalidatePath("/socios");
     redirect("/socios");
