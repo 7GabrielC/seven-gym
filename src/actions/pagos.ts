@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { planes, preciosPlan, suscripciones, pagos, socios } from "@/db/schema";
+import { planes, preciosPlan, suscripciones, pagos } from "@/db/schema";
 import { calcularVencimiento, type UnidadDuracion } from "@/lib/fechas/vencimiento";
 import { eq, desc, lte, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -9,16 +9,38 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export async function registrarPago(formData: FormData) {
+export async function registrarPago(
+    formData: FormData
+): Promise<{ error: string } | void> {
     const socioId = Number(formData.get("socioId"));
     const planId = Number(formData.get("planId"));
     const metodo = formData.get("metodo") as "efectivo" | "transferencia";
+
     const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) throw new Error("No autorizado");
+    if (!session) return { error: "Tu sesión expiró. Iniciá sesión de nuevo." };
 
     // 1. Traer el plan elegido
     const [plan] = await db.select().from(planes).where(eq(planes.id, planId));
-    if (!plan) throw new Error("Plan no encontrado");
+    if (!plan) return { error: "Plan no encontrado." };
+
+    // 1b. Validar uso único (ej: plan Bienvenida)
+    if (plan.usosMaximosPorSocio !== null) {
+        const suscripcionesPrevias = await db
+        .select()
+        .from(suscripciones)
+        .where(
+            and(
+            eq(suscripciones.socioId, socioId),
+            eq(suscripciones.planId, planId)
+            )
+        );
+
+        if (suscripcionesPrevias.length >= plan.usosMaximosPorSocio) {
+        return {
+            error: `Este socio ya usó el plan ${plan.nombre} y no puede volver a contratarlo.`,
+        };
+        }
+    }
 
     // 2. Traer el precio vigente del plan (el más reciente)
     const hoy = new Date();
@@ -29,10 +51,26 @@ export async function registrarPago(formData: FormData) {
         .where(and(eq(preciosPlan.planId, planId), lte(preciosPlan.vigenteDesde, hoyStr)))
         .orderBy(desc(preciosPlan.vigenteDesde))
         .limit(1);
-    if (!precio) throw new Error("El plan no tiene precio vigente");
+    if (!precio) return { error: "El plan no tiene un precio vigente cargado." };
 
-    // 3. Calcular el vencimiento con nuestra función
-    const desde = hoy;
+    // 3. Determinar desde cuándo arranca el nuevo período (encadenamiento)
+    const [suscripcionVigente] = await db
+        .select()
+        .from(suscripciones)
+        .where(eq(suscripciones.socioId, socioId))
+        .orderBy(desc(suscripciones.hasta))
+        .limit(1);
+
+    // Si tiene una suscripción cuyo vencimiento es futuro, encadenamos desde ahí.
+    // Si no (nunca tuvo, o está vencido), arrancamos hoy.
+    let desde = hoy;
+    if (suscripcionVigente) {
+        const vencimientoActual = new Date(suscripcionVigente.hasta);
+        if (vencimientoActual > hoy) {
+        desde = vencimientoActual;
+        }
+    }
+
     const hasta = calcularVencimiento(
         desde,
         plan.duracionValor,
