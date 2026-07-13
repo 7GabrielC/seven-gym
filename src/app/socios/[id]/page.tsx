@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
 import { BotonBaja } from "./boton-baja";
+import { requerirSesion } from "@/lib/session";
 
 const etiquetasEstado: Record<EstadoSocio, string> = {
     activo: "Activo",
@@ -26,6 +27,7 @@ export default async function FichaSocioPage({
     }: {
     params: Promise<{ id: string }>;
     }) {
+    await requerirSesion();
     const { id } = await params;
     const socioId = Number(id);
 

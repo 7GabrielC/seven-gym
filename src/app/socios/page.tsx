@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
 import { TablaSocios } from "./tabla-socios";
+import { requerirSesion } from "@/lib/session";
 
 export default async function SociosPage() {
+    await requerirSesion();
     const listaSocios = await db.select().from(socios).where(isNull(socios.eliminadoEn));
     const hoy = new Date();
 

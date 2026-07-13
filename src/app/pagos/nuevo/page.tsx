@@ -2,8 +2,10 @@ import { db } from "@/db";
 import { socios, planes } from "@/db/schema";
 import { isNull } from "drizzle-orm";
 import { FormPago } from "./form-pago";
+import { requerirSesion } from "@/lib/session";
 
 export default async function NuevoPagoPage() {
+    await requerirSesion();
     const listaSocios = await db.select().from(socios).where(isNull(socios.eliminadoEn));
     const listaPlanes = await db.select().from(planes);
 

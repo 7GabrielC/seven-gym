@@ -1,6 +1,8 @@
 import { obtenerMetricas } from "@/lib/dashboard/metricas";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { requerirSesion } from "@/lib/session";
+import { BarraUsuario } from "@/components/barra-usuario";
 
 function formatearPesos(centavos: number): string {
   return (centavos / 100).toLocaleString("es-AR", {
@@ -10,10 +12,15 @@ function formatearPesos(centavos: number): string {
 }
 
 export default async function DashboardPage() {
+  const session = await requerirSesion();
   const metricas = await obtenerMetricas();
 
   return (
     <div className="max-w-5xl mx-auto p-8">
+      <div className="flex justify-end mb-4">
+        <BarraUsuario nombre={session.user.name} rol={session.user.rol ?? "recepcionista"} />
+      </div>
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Seven</h1>
         <div className="flex gap-2">

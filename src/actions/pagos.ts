@@ -6,11 +6,15 @@ import { calcularVencimiento, type UnidadDuracion } from "@/lib/fechas/vencimien
 import { eq, desc, lte, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function registrarPago(formData: FormData) {
     const socioId = Number(formData.get("socioId"));
     const planId = Number(formData.get("planId"));
     const metodo = formData.get("metodo") as "efectivo" | "transferencia";
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) throw new Error("No autorizado");
 
     // 1. Traer el plan elegido
     const [plan] = await db.select().from(planes).where(eq(planes.id, planId));
@@ -52,7 +56,7 @@ export async function registrarPago(formData: FormData) {
         montoCentavos: precio.precioCentavos,
         metodo,
         fechaPago: hoyStr,
-        registradoPor: "temporal", // TODO: reemplazar por el id del usuario logueado
+        registradoPor: session.user.id,
         });
     });
 

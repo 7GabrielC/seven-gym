@@ -2,8 +2,10 @@ import { crearSocio } from "@/actions/socios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { requerirSesion } from "@/lib/session";
 
-export default function NuevoSocioPage() {
+export default async function NuevoSocioPage() {
+    await requerirSesion();
     return (
         <div className="max-w-md mx-auto p-8">
         <h1 className="text-2xl font-semibold mb-6">Nuevo socio</h1>

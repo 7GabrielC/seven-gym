@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { requerirSesion } from "@/lib/session";
 
 export default async function EditarSocioPage({
     params,
     }: {
     params: Promise<{ id: string }>;
     }) {
+    await requerirSesion();
     const { id } = await params;
     const socioId = Number(id);
 
