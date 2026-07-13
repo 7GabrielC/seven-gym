@@ -52,7 +52,7 @@ export async function registrarPago(formData: FormData) {
         montoCentavos: precio.precioCentavos,
         metodo,
         fechaPago: hoyStr,
-        registradoPor: 1, // temporal: usuario dueño (id 1) hasta que haya login
+        registradoPor: "temporal", // TODO: reemplazar por el id del usuario logueado
         });
     });
 
