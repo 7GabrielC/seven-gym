@@ -20,3 +20,19 @@ export async function esDueno() {
     });
     return session?.user?.rol === "dueño";
 }
+
+export async function requerirDueno() {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session) {
+        redirect("/login");
+    }
+
+    if (session.user.rol !== "dueño") {
+        redirect("/");
+    }
+
+    return session;
+}
