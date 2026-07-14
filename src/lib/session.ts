@@ -13,3 +13,10 @@ export async function requerirSesion() {
 
     return session;
 }
+
+export async function esDueno() {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+    return session?.user?.rol === "dueño";
+}

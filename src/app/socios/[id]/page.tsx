@@ -89,6 +89,9 @@ export default async function FichaSocioPage({
         <div className="space-y-2 mb-8">
             <p><span className="text-gray-500">DNI:</span> {socio.dni}</p>
             <p><span className="text-gray-500">Teléfono:</span> {socio.telefono}</p>
+            {socio.email && (
+            <p><span className="text-gray-500">Email:</span> {socio.email}</p>
+            )}
             {ultimaSuscripcion && (
             <p>
                 <span className="text-gray-500">Vence:</span>{" "}

@@ -8,6 +8,7 @@ export const socios = pgTable("socios", {
     apellido: varchar("apellido", { length: 100 }).notNull(),
     dni: varchar("dni", { length: 20 }).notNull().unique(),
     telefono: varchar("telefono", { length: 30 }).notNull(),
+    email: varchar("email", { length: 150 }),
     fechaNacimiento: date("fecha_nacimiento").notNull(),
 
     diaAncla: integer("dia_ancla"),

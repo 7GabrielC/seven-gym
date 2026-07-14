@@ -59,6 +59,16 @@ export default async function EditarSocioPage({
             </div>
 
             <div className="space-y-2">
+                <Label htmlFor="email">Email (opcional)</Label>
+                <Input
+                id="email"
+                name="email"
+                type="email"
+                defaultValue={socio.email ?? ""}
+                />
+            </div>
+
+            <div className="space-y-2">
             <Label htmlFor="fechaNacimiento">Fecha de nacimiento</Label>
             <Input
                 id="fechaNacimiento"

@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { planes, preciosPlan, suscripciones, pagos } from "@/db/schema";
+import { planes, preciosPlan, suscripciones, pagos, sesionesCaja, movimientosCaja } from "@/db/schema";
 import { calcularVencimiento, type UnidadDuracion } from "@/lib/fechas/vencimiento";
-import { eq, desc, lte, and } from "drizzle-orm";
+import { eq, desc, lte, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -78,6 +78,25 @@ export async function registrarPago(
     );
 
     // 4. Guardar suscripcion y pago juntos (transacción: todo o nada)
+    // Si el pago es en efectivo, necesita una caja abierta
+    let cajaAbierta = null;
+    if (metodo === "efectivo") {
+        [cajaAbierta] = await db
+        .select()
+        .from(sesionesCaja)
+        .where(
+            and(
+            eq(sesionesCaja.usuarioId, session.user.id),
+            isNull(sesionesCaja.cerradaEn)
+            )
+        );
+
+        if (!cajaAbierta) {
+            return {
+                error: "Necesitás una caja abierta para cobrar en efectivo. Abrí la caja primero.",
+            };
+        }
+    }
     await db.transaction(async (tx) => {
         const [nuevaSuscripcion] = await tx
         .insert(suscripciones)
@@ -89,14 +108,25 @@ export async function registrarPago(
         })
         .returning();
 
-        await tx.insert(pagos).values({
-        suscripcionId: nuevaSuscripcion.id,
-        montoCentavos: precio.precioCentavos,
-        metodo,
-        fechaPago: hoyStr,
-        registradoPor: session.user.id,
+        const [nuevoPago] = await tx.insert(pagos).values({
+            suscripcionId: nuevaSuscripcion.id,
+            montoCentavos: precio.precioCentavos,
+            metodo,
+            fechaPago: hoyStr,
+            registradoPor: session.user.id,
+            }).returning();
+
+            // Si es efectivo, generar el movimiento de caja automáticamente
+            if (metodo === "efectivo" && cajaAbierta) {
+            await tx.insert(movimientosCaja).values({
+                sesionCajaId: cajaAbierta.id,
+                pagoId: nuevoPago.id,
+                tipo: "ingreso",
+                montoCentavos: precio.precioCentavos,
+                concepto: "Pago de cuota",
+            });
+            }
         });
-    });
 
     revalidatePath("/socios");
     redirect("/socios");

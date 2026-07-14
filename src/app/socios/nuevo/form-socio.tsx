@@ -43,6 +43,11 @@ export function FormSocio() {
         </div>
 
         <div className="space-y-2">
+            <Label htmlFor="email">Email (opcional)</Label>
+            <Input id="email" name="email" type="email" />
+        </div>
+
+        <div className="space-y-2">
             <Label htmlFor="fechaNacimiento">Fecha de nacimiento</Label>
             <Input id="fechaNacimiento" name="fechaNacimiento" type="date" required />
         </div>

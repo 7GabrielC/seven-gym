@@ -14,6 +14,7 @@ export async function crearSocio(
     const dni = formData.get("dni") as string;
     const telefono = formData.get("telefono") as string;
     const fechaNacimiento = formData.get("fechaNacimiento") as string;
+    const email = (formData.get("email") as string) || null;
 
     // Verificar si ya existe un socio con ese DNI (incluyendo dados de baja)
     const [existente] = await db
@@ -26,11 +27,12 @@ export async function crearSocio(
     }
 
     await db.insert(socios).values({
-        nombre,
-        apellido,
-        dni,
-        telefono,
-        fechaNacimiento,
+    nombre,
+    apellido,
+    dni,
+    telefono,
+    email,
+    fechaNacimiento,
     });
 
     revalidatePath("/socios");
@@ -44,6 +46,7 @@ export async function editarSocio(formData: FormData) {
     const dni = formData.get("dni") as string;
     const telefono = formData.get("telefono") as string;
     const fechaNacimiento = formData.get("fechaNacimiento") as string;
+    const email = (formData.get("email") as string) || null;
 
     await db
         .update(socios)
@@ -52,6 +55,7 @@ export async function editarSocio(formData: FormData) {
         apellido,
         dni,
         telefono,
+        email,
         fechaNacimiento,
         actualizadoEn: new Date(),
         })

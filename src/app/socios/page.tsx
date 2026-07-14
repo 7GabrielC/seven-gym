@@ -32,6 +32,7 @@ export default async function SociosPage() {
             apellido: socio.apellido,
             dni: socio.dni,
             telefono: socio.telefono,
+            email: socio.email,
             estado,
         };
         })

@@ -25,6 +25,7 @@ type SocioFila = {
     apellido: string;
     dni: string;
     telefono: string;
+    email: string | null;
     estado: EstadoSocio | null;
 };
 
@@ -60,6 +61,7 @@ export function TablaSocios({ socios }: { socios: SocioFila[] }) {
                 <th className="py-2 pr-4">Apellido</th>
                 <th className="py-2 pr-4">DNI</th>
                 <th className="py-2 pr-4">Teléfono</th>
+                <th className="py-2 pr-4">Email</th>
                 <th className="py-2 pr-4">Estado</th>
                 </tr>
             </thead>
@@ -74,6 +76,9 @@ export function TablaSocios({ socios }: { socios: SocioFila[] }) {
                     <td className="py-2 pr-4">{socio.apellido}</td>
                     <td className="py-2 pr-4">{socio.dni}</td>
                     <td className="py-2 pr-4">{socio.telefono}</td>
+                    <td className="py-2 pr-4">
+                        {socio.email ?? <span className="text-gray-400">—</span>}
+                    </td>
                     <td className="py-2 pr-4">
                     {socio.estado ? (
                         <span className={`px-2 py-1 rounded text-xs font-medium ${estilosEstado[socio.estado]}`}>
