@@ -59,6 +59,9 @@ export const pagos = pgTable("pagos", {
     fechaPago: date("fecha_pago").notNull(),
     registradoPor: text("registrado_por").notNull().references(() => user.id),
     anulado: boolean("anulado").notNull().default(false),
+    anuladoEn: timestamp("anulado_en"),
+    anuladoPor: text("anulado_por").references(() => user.id),
+    motivoAnulacion: text("motivo_anulacion"),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
 });
 

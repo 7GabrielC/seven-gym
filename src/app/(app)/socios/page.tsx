@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { socios, suscripciones } from "@/db/schema";
-import { isNull, eq, desc } from "drizzle-orm";
+import { isNull, eq, desc, and } from "drizzle-orm";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
@@ -17,7 +17,12 @@ export default async function SociosPage() {
         const [ultimaSuscripcion] = await db
             .select()
             .from(suscripciones)
-            .where(eq(suscripciones.socioId, socio.id))
+            .where(
+            and(
+                eq(suscripciones.socioId, socio.id),
+                isNull(suscripciones.eliminadoEn)
+            )
+            )
             .orderBy(desc(suscripciones.hasta))
             .limit(1);
 

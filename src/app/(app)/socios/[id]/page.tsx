@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
 import { BotonBaja } from "./boton-baja";
 import { requerirSesion } from "@/lib/session";
+import { BotonAnular } from "./boton-anular";
 
 const etiquetasEstado: Record<EstadoSocio, string> = {
     activo: "Activo",
@@ -27,7 +28,8 @@ export default async function FichaSocioPage({
     }: {
     params: Promise<{ id: string }>;
     }) {
-    await requerirSesion();
+    const session = await requerirSesion();
+    const soyDueno = session.user.rol === "dueño";
     const { id } = await params;
     const socioId = Number(id);
 
@@ -43,7 +45,12 @@ export default async function FichaSocioPage({
     const [ultimaSuscripcion] = await db
         .select()
         .from(suscripciones)
-        .where(eq(suscripciones.socioId, socioId))
+        .where(
+        and(
+            eq(suscripciones.socioId, socioId),
+            isNull(suscripciones.eliminadoEn)
+        )
+        )
         .orderBy(desc(suscripciones.hasta))
         .limit(1);
 
@@ -58,6 +65,7 @@ export default async function FichaSocioPage({
         metodo: pagos.metodo,
         fecha: pagos.fechaPago,
         plan: planes.nombre,
+        anulado: pagos.anulado,
         })
         .from(pagos)
         .innerJoin(suscripciones, eq(pagos.suscripcionId, suscripciones.id))
@@ -113,20 +121,35 @@ export default async function FichaSocioPage({
             <table className="w-full border-collapse">
             <thead>
                 <tr className="border-b text-left">
-                <th className="py-2 pr-4">Fecha</th>
-                <th className="py-2 pr-4">Plan</th>
-                <th className="py-2 pr-4">Monto</th>
-                <th className="py-2 pr-4">Método</th>
+                    <th className="py-2 pr-4">Fecha</th>
+                    <th className="py-2 pr-4">Plan</th>
+                    <th className="py-2 pr-4">Monto</th>
+                    <th className="py-2 pr-4">Método</th>
+                    <th className="py-2 pr-4">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {historialPagos.map((pago) => (
-                <tr key={pago.id} className="border-b">
-                    <td className="py-2 pr-4">{pago.fecha}</td>
-                    <td className="py-2 pr-4">{pago.plan}</td>
-                    <td className="py-2 pr-4">{formatearPesos(pago.monto)}</td>
-                    <td className="py-2 pr-4 capitalize">{pago.metodo}</td>
-                </tr>
+                    <tr
+                        key={pago.id}
+                        className={`border-b ${pago.anulado ? "opacity-50" : ""}`}
+                    >
+                        <td className="py-2 pr-4">{pago.fecha}</td>
+                        <td className="py-2 pr-4">{pago.plan}</td>
+                        <td className="py-2 pr-4">
+                        <span className={pago.anulado ? "line-through" : ""}>
+                            {formatearPesos(pago.monto)}
+                        </span>
+                        </td>
+                        <td className="py-2 pr-4 capitalize">{pago.metodo}</td>
+                        <td className="py-2 pr-4">
+                        {pago.anulado ? (
+                            <span className="text-xs text-gray-400">Anulado</span>
+                        ) : (
+                            soyDueno && <BotonAnular pagoId={pago.id} />
+                        )}
+                        </td>
+                    </tr>
                 ))}
             </tbody>
             </table>

@@ -26,11 +26,16 @@ export async function obtenerMetricas() {
 
     for (const socio of listaSocios) {
         const [ultimaSuscripcion] = await db
-        .select()
-        .from(suscripciones)
-        .where(eq(suscripciones.socioId, socio.id))
-        .orderBy(desc(suscripciones.hasta))
-        .limit(1);
+            .select()
+            .from(suscripciones)
+            .where(
+                and(
+                eq(suscripciones.socioId, socio.id),
+                isNull(suscripciones.eliminadoEn)
+                )
+            )
+            .orderBy(desc(suscripciones.hasta))
+            .limit(1);
 
         if (ultimaSuscripcion) {
         const estado = calcularEstadoSocio(new Date(ultimaSuscripcion.hasta), hoy);
