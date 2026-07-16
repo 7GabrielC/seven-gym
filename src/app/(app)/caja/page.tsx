@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { sesionesCaja, movimientosCaja } from "@/db/schema";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { FormAbrirCaja } from "./form-abrir";
-import { FormMovimiento } from "./form-movimiento";
+import { FormAjuste } from "./form-movimiento";
 import { FormCerrarCaja } from "./form-cerrar";
 import Link from "next/link";
 
@@ -73,39 +73,33 @@ export default async function CajaPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                <h2 className="text-lg font-semibold mb-3">Registrar movimiento</h2>
-                <FormMovimiento />
-                </div>
-
-                <div>
+            <div>
                 <h2 className="text-lg font-semibold mb-3">
-                    Movimientos ({movimientos.length})
+                Movimientos del turno ({movimientos.length})
                 </h2>
                 {movimientos.length === 0 ? (
-                    <p className="text-sm text-gray-400">Sin movimientos todavía.</p>
+                <p className="text-sm text-gray-400">Sin movimientos todavía.</p>
                 ) : (
-                    <ul className="space-y-2">
+                <ul className="space-y-2">
                     {movimientos.map((mov) => (
-                        <li
+                    <li
                         key={mov.id}
                         className="flex justify-between items-center text-sm border-b pb-2"
+                    >
+                        <span className="text-gray-600">{mov.concepto}</span>
+                        <span
+                        className={
+                            mov.tipo === "ingreso" ? "text-green-600" : "text-red-600"
+                        }
                         >
-                        <span>
-                            <span
-                            className={
-                                mov.tipo === "ingreso" ? "text-green-600" : "text-red-600"
-                            }
-                            >
-                            {mov.tipo === "ingreso" ? "+" : "−"} {pesos(mov.montoCentavos)}
-                            </span>
-                            <span className="text-gray-500 ml-2">{mov.concepto}</span>
+                        {mov.tipo === "ingreso" ? "+" : "−"} {pesos(mov.montoCentavos)}
                         </span>
-                        </li>
+                    </li>
                     ))}
-                    </ul>
+                </ul>
                 )}
+                <div className="mt-4">
+                <FormAjuste />
                 </div>
             </div>
 

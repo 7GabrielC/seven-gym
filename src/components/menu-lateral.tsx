@@ -14,6 +14,7 @@ const items: ItemMenu[] = [
     { href: "/socios", label: "Socios" },
     { href: "/pagos/nuevo", label: "Cobrar cuota" },
     { href: "/movimientos/ingresos", label: "Movimientos" },
+    { href: "/reportes", label: "Reportes", soloDueno: true },
     { href: "/caja", label: "Caja" },
     { href: "/planes", label: "Planes", soloDueno: true },
     { href: "/usuarios", label: "Usuarios", soloDueno: true },
