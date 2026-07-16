@@ -1,13 +1,13 @@
 import { db } from "@/db";
 import { socios, planes } from "@/db/schema";
-import { isNull } from "drizzle-orm";
+import { isNull, eq } from "drizzle-orm";
 import { FormPago } from "./form-pago";
 import { requerirSesion } from "@/lib/session";
 
 export default async function NuevoPagoPage() {
     await requerirSesion();
     const listaSocios = await db.select().from(socios).where(isNull(socios.eliminadoEn));
-    const listaPlanes = await db.select().from(planes);
+    const listaPlanes = await db.select().from(planes).where(eq(planes.activo, true));
 
     return (
         <div className="max-w-md mx-auto p-8">

@@ -13,12 +13,13 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 **Módulos funcionando:**
 - Socios: alta, listado con buscador en vivo, ficha individual, edición, baja (soft delete), estado derivado (activo / por vencer / vencido / inactivo)
 - Pagos: registro con cálculo de vencimiento, precio congelado, encadenamiento de períodos, anulación con auditoría
+- Planes y precios: cambio de precio con historial, activar/desactivar planes, creación de planes nuevos (solo dueño)
 - Caja: apertura por turno, movimientos manuales (ingresos/egresos), cierre con arqueo, historial filtrado por rol
 - Autenticación: login email/password, dos roles (dueño / recepcionista), sesiones, protección de páginas y acciones
 - Usuarios: creación de cuentas desde el sistema (solo dueño)
 - Dashboard: listas accionables (por vencer, vencidos) + métricas de ingresos
 
-**Pendiente:** módulo de gastos, gestión de precios/planes por UI, observaciones, reportes, validación de formato (Zod), diseño visual.
+**Pendiente:** módulo de gastos, observaciones, reportes, validación de formato (Zod), diseño visual.
 
 ---
 
@@ -120,6 +121,7 @@ src/
 │   │   │   └── [id]/           # ficha, editar, botones baja/anular
 │   │   ├── pagos/nuevo/
 │   │   ├── caja/               # caja actual + historial/
+│   │   ├── planes/             # solo dueño: precios, historial, activar/desactivar
 │   │   └── usuarios/           # solo dueño
 │   ├── login/                  # fuera del grupo (sin menú, sin sesión)
 │   ├── api/auth/[...all]/      # route handler de Better Auth
@@ -128,6 +130,7 @@ src/
 │   ├── socios.ts               # crear, editar, dar de baja
 │   ├── pagos.ts                # registrar, anular
 │   ├── caja.ts                 # abrir, registrar movimiento, cerrar
+│   ├── planes.ts               # cambiar precio, activar/desactivar, crear (solo dueño)
 │   └── usuarios.ts             # crear usuario (solo dueño)
 ├── components/
 │   ├── ui/                     # componentes de shadcn (no editar salvo diseño)
@@ -179,6 +182,8 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 9. **Un arqueo cerrado es inmutable.** Anular un pago de una caja cerrada NO modifica su arqueo (solo avisa).
 10. **Solo el dueño anula pagos**, con motivo obligatorio (separación de funciones).
 11. **Pago dividido (efectivo + transferencia) = dos pagos separados**, cada uno con su método real.
+12. **Cambiar un precio NO edita el precio viejo:** inserta una fila nueva en `precios_plan` con `vigente_desde = hoy`. El precio vigente en una fecha X es el registro con el `vigente_desde` más grande que sea ≤ X. Excepción: si ya se cambió el precio hoy, se actualiza esa fila (evita filas duplicadas con la misma fecha).
+13. **Los planes no se borran, se desactivan.** Un plan inactivo no aparece en el formulario de pagos, pero los pagos históricos que lo referencian siguen intactos.
 
 ---
 
@@ -191,6 +196,7 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 | Abrir/cerrar su caja, movimientos | ✓ | ✓ |
 | Ver historial de cajas | todas | solo las suyas |
 | Anular pagos | ✓ | ✗ |
+| Planes y precios | ✓ | ✗ |
 | Crear usuarios | ✓ | ✗ |
 
 La protección se aplica en **tres niveles**: ocultar en el menú, redirigir en la página (`requerirDueno`), y rechazar en la Server Action. La seguridad real es la de la action.

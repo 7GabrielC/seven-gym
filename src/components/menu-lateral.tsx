@@ -12,7 +12,8 @@ type ItemMenu = {
 const items: ItemMenu[] = [
     { href: "/", label: "Inicio" },
     { href: "/socios", label: "Socios" },
-    { href: "/pagos/nuevo", label: "Registrar pago" },
+    { href: "/pagos/nuevo", label: "Cobrar cuota" },
+    { href: "/movimientos/ingresos", label: "Movimientos" },
     { href: "/caja", label: "Caja" },
     { href: "/planes", label: "Planes", soloDueno: true },
     { href: "/usuarios", label: "Usuarios", soloDueno: true },
@@ -28,10 +29,11 @@ export function MenuLateral({ rol }: { rol: string }) {
         <nav className="w-56 shrink-0 border-r min-h-screen p-4 space-y-1">
         <div className="text-xl font-bold mb-6 px-2">Seven</div>
         {itemsVisibles.map((item) => {
+            const base = item.href.startsWith("/movimientos")
+                ? "/movimientos"
+                : item.href;
             const activo =
-            item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+                item.href === "/" ? pathname === "/" : pathname.startsWith(base);
             return (
             <Link
                 key={item.href}

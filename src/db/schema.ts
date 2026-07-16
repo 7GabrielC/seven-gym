@@ -47,9 +47,24 @@ export const suscripciones = pgTable("suscripciones", {
     eliminadoEn: timestamp("eliminado_en"),
 });
 
-export const metodoPagoEnum = pgEnum("metodo_pago", ["efectivo", "transferencia"]);
+export const metodoPagoEnum = pgEnum("metodo_pago", [
+    "efectivo", 
+    "transferencia"
+]);
 
-export const tipoMovimientoEnum = pgEnum("tipo_movimiento", ["ingreso", "egreso"]);
+export const tipoMovimientoEnum = pgEnum("tipo_movimiento", [
+    "ingreso", 
+    "egreso"
+]);
+
+export const categoriaGastoEnum = pgEnum("categoria_gasto", [
+    "limpieza",
+    "mantenimiento",
+    "servicios",
+    "sueldos",
+    "equipamiento",
+    "otros",
+]);
 
 export const pagos = pgTable("pagos", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -78,6 +93,8 @@ export const movimientosCaja = pgTable("movimientos_caja", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
     sesionCajaId: bigint("sesion_caja_id", { mode: "number" }).notNull().references(() => sesionesCaja.id),
     pagoId: bigint("pago_id", { mode: "number" }).references(() => pagos.id),
+    gastoId: bigint("gasto_id", { mode: "number" }).references(() => gastos.id),
+    otroIngresoId: bigint("otro_ingreso_id", { mode: "number" }).references(() => otrosIngresos.id),
     tipo: tipoMovimientoEnum("tipo").notNull(),
     montoCentavos: bigint("monto_centavos", { mode: "number" }).notNull(),
     concepto: varchar("concepto", { length: 150 }).notNull(),
@@ -185,3 +202,26 @@ export const accountRelations = relations(account, ({ one }) => ({
         references: [user.id],
     }),
 }));
+
+export const gastos = pgTable("gastos", {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    descripcion: varchar("descripcion", { length: 200 }).notNull(),
+    categoria: categoriaGastoEnum("categoria").notNull(),
+    montoCentavos: bigint("monto_centavos", { mode: "number" }).notNull(),
+    metodo: metodoPagoEnum("metodo").notNull(),
+    fecha: date("fecha").notNull(),
+    registradoPor: text("registrado_por").notNull().references(() => user.id),
+    eliminadoEn: timestamp("eliminado_en"),
+    creadoEn: timestamp("creado_en").notNull().defaultNow(),
+});
+
+export const otrosIngresos = pgTable("otros_ingresos", {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    descripcion: varchar("descripcion", { length: 200 }).notNull(),
+    montoCentavos: bigint("monto_centavos", { mode: "number" }).notNull(),
+    metodo: metodoPagoEnum("metodo").notNull(),
+    fecha: date("fecha").notNull(),
+    registradoPor: text("registrado_por").notNull().references(() => user.id),
+    eliminadoEn: timestamp("eliminado_en"),
+    creadoEn: timestamp("creado_en").notNull().defaultNow(),
+});
