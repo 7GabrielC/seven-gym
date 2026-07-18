@@ -7,7 +7,7 @@ import {
     gastos,
     otrosIngresos,
 } from "@/db/schema";
-import { eq, and, isNull, gte, lte, isNotNull, count, sql } from "drizzle-orm";
+import { eq, sum, and, isNull, gte, lte, isNotNull, count, sql } from "drizzle-orm";
 import type { Periodo } from "./periodo";
 
 export type ResumenFinanciero = {
@@ -214,4 +214,91 @@ export async function metricasSocios(p: Periodo): Promise<MetricasSocios> {
         renovaron,
         tasaRenovacion: vencieron > 0 ? (renovaron / vencieron) * 100 : null,
     };
+}
+
+export type PuntoMensual = {
+    mes: string;
+    etiqueta: string;
+    ingresos: number;
+    egresos: number;
+    resultado: number;
+};
+
+/** Serie de los últimos N meses (incluye el actual) */
+export async function serieMensual(meses = 6): Promise<PuntoMensual[]> {
+    const hoy = new Date();
+    const desde = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() - (meses - 1), 1))
+        .toISOString()
+        .slice(0, 10);
+
+    const [cuotas, otros, listaGastos] = await Promise.all([
+        db
+        .select({
+            mes: sql<string>`to_char(${pagos.fechaPago}, 'YYYY-MM')`,
+            total: sum(pagos.montoCentavos),
+        })
+        .from(pagos)
+        .where(and(eq(pagos.anulado, false), gte(pagos.fechaPago, desde)))
+        .groupBy(sql`to_char(${pagos.fechaPago}, 'YYYY-MM')`),
+
+        db
+        .select({
+            mes: sql<string>`to_char(${otrosIngresos.fecha}, 'YYYY-MM')`,
+            total: sum(otrosIngresos.montoCentavos),
+        })
+        .from(otrosIngresos)
+        .where(and(isNull(otrosIngresos.eliminadoEn), gte(otrosIngresos.fecha, desde)))
+        .groupBy(sql`to_char(${otrosIngresos.fecha}, 'YYYY-MM')`),
+
+        db
+        .select({
+            mes: sql<string>`to_char(${gastos.fecha}, 'YYYY-MM')`,
+            total: sum(gastos.montoCentavos),
+        })
+        .from(gastos)
+        .where(and(isNull(gastos.eliminadoEn), gte(gastos.fecha, desde)))
+        .groupBy(sql`to_char(${gastos.fecha}, 'YYYY-MM')`),
+    ]);
+
+    const mapa = new Map<string, { ingresos: number; egresos: number }>();
+
+    // Armar los meses vacíos primero, para que no falte ninguno
+    const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const serie: PuntoMensual[] = [];
+
+    for (let i = meses - 1; i >= 0; i--) {
+        const d = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() - i, 1));
+        const clave = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        mapa.set(clave, { ingresos: 0, egresos: 0 });
+        serie.push({
+        mes: clave,
+        etiqueta: MESES_CORTOS[d.getUTCMonth()],
+        ingresos: 0,
+        egresos: 0,
+        resultado: 0,
+        });
+    }
+
+    for (const c of cuotas) {
+        const e = mapa.get(c.mes);
+        if (e) e.ingresos += Number(c.total ?? 0);
+    }
+    for (const o of otros) {
+        const e = mapa.get(o.mes);
+        if (e) e.ingresos += Number(o.total ?? 0);
+    }
+    for (const g of listaGastos) {
+        const e = mapa.get(g.mes);
+        if (e) e.egresos += Number(g.total ?? 0);
+    }
+
+    return serie.map((p) => {
+        const v = mapa.get(p.mes)!;
+        return {
+        ...p,
+        ingresos: v.ingresos,
+        egresos: v.egresos,
+        resultado: v.ingresos - v.egresos,
+        };
+    });
 }

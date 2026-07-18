@@ -4,20 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { type EstadoSocio } from "@/lib/socios/estado";
 import { Input } from "@/components/ui/input";
-
-const estilosEstado: Record<EstadoSocio, string> = {
-    activo: "bg-green-100 text-green-800",
-    por_vencer: "bg-yellow-100 text-yellow-800",
-    vencido: "bg-red-100 text-red-800",
-    inactivo: "bg-gray-100 text-gray-600",
-};
-
-const etiquetasEstado: Record<EstadoSocio, string> = {
-    activo: "Activo",
-    por_vencer: "Por vencer",
-    vencido: "Vencido",
-    inactivo: "Inactivo",
-};
+import { BadgeEstado } from "@/components/badge-estado";
 
 type SocioFila = {
     id: number;
@@ -26,6 +13,7 @@ type SocioFila = {
     dni: string;
     telefono: string;
     email: string | null;
+    vencimiento: string | null;
     estado: EstadoSocio | null;
 };
 
@@ -52,46 +40,63 @@ export function TablaSocios({ socios }: { socios: SocioFila[] }) {
         />
 
         {sociosFiltrados.length === 0 ? (
-            <p className="text-muted-foreground">No se encontraron socios.</p>
+            <p className="text-sm text-muted-foreground">No se encontraron socios.</p>
         ) : (
-            <table className="w-full border-collapse">
-            <thead>
-                <tr className="border-b text-left">
-                <th className="py-2 pr-4">Nombre</th>
-                <th className="py-2 pr-4">Apellido</th>
-                <th className="py-2 pr-4">DNI</th>
-                <th className="py-2 pr-4">Teléfono</th>
-                <th className="py-2 pr-4">Email</th>
-                <th className="py-2 pr-4">Estado</th>
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <table className="w-full">
+                <thead>
+                <tr className="border-b border-border">
+                    <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                    SOCIO
+                    </th>
+                    <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                    DNI
+                    </th>
+                    <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                    TELÉFONO
+                    </th>
+                    <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                    VENCE
+                    </th>
+                    <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                    ESTADO
+                    </th>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 {sociosFiltrados.map((socio) => (
-                <tr key={socio.id} className="border-b">
-                    <td className="py-2 pr-4">
-                    <Link href={`/socios/${socio.id}`} className="text-blue-600 hover:underline">
-                        {socio.nombre}
-                    </Link>
+                    <tr
+                    key={socio.id}
+                    className="border-b border-border/50 last:border-0 transition-colors duration-150 hover:bg-surface-2"
+                    >
+                    <td className="py-2.5 px-4">
+                        <Link
+                        href={`/socios/${socio.id}`}
+                        className="text-sm text-foreground hover:text-primary transition-colors"
+                        >
+                        {socio.nombre} {socio.apellido}
+                        </Link>
                     </td>
-                    <td className="py-2 pr-4">{socio.apellido}</td>
-                    <td className="py-2 pr-4">{socio.dni}</td>
-                    <td className="py-2 pr-4">{socio.telefono}</td>
-                    <td className="py-2 pr-4">
-                        {socio.email ?? <span className="text-gray-400">—</span>}
+                    <td className="py-2.5 px-4 text-sm text-muted-foreground tabular">
+                        {socio.dni}
                     </td>
-                    <td className="py-2 pr-4">
-                    {socio.estado ? (
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${estilosEstado[socio.estado]}`}>
-                        {etiquetasEstado[socio.estado]}
-                        </span>
-                    ) : (
-                        <span className="text-xs text-gray-400">Sin plan</span>
-                    )}
+                    <td className="py-2.5 px-4 text-sm text-muted-foreground tabular">
+                        {socio.telefono}
                     </td>
-                </tr>
+                    <td className="py-2.5 px-4 text-sm text-muted-foreground tabular">
+                        {socio.vencimiento ?? "—"}
+                    </td>
+                    <td className="py-2.5 px-4">
+                        <BadgeEstado
+                        estado={socio.estado}
+                        vencimiento={socio.vencimiento}
+                        />
+                    </td>
+                    </tr>
                 ))}
-            </tbody>
+                </tbody>
             </table>
+            </div>
         )}
         </div>
     );

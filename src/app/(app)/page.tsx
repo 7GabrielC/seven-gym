@@ -1,71 +1,110 @@
 import { obtenerMetricas } from "@/lib/dashboard/metricas";
+import { requerirSesion } from "@/lib/session";
+import { diasHastaVencimiento } from "@/lib/socios/estado";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { requerirSesion } from "@/lib/session";
 
-
-function formatearPesos(centavos: number): string {
+function pesos(centavos: number): string {
   return (centavos / 100).toLocaleString("es-AR", {
     style: "currency",
     currency: "ARS",
+    maximumFractionDigits: 0,
   });
 }
 
+const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
 export default async function DashboardPage() {
   const session = await requerirSesion();
+
   const metricas = await obtenerMetricas();
 
+  const hoy = new Date();
+  const fecha = `${DIAS[hoy.getDay()]} ${hoy.getDate()} de ${MESES[hoy.getMonth()]}`;
+  const primerNombre = session.user.name.split(" ")[0];
+
   return (
-    <div className="max-w-5xl mx-auto p-8">
+    <div className="max-w-6xl px-8 py-7">
 
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Seven</h1>
-        <div className="flex gap-2">
-          <Link href="/socios">
-            <Button variant="outline">Socios</Button>
-          </Link>
-          <Link href="/pagos/nuevo">
-            <Button>Registrar pago</Button>
-          </Link>
+      {/* Saludo */}
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Buen día, {primerNombre}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{fecha}</p>
         </div>
+        <Link href="/pagos/nuevo">
+          <Button>Cobrar cuota</Button>
+        </Link>
       </div>
 
-      {/* Bloque 1: Qué hacer hoy */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div className="border rounded-lg p-4">
-          <h2 className="text-sm font-medium text-yellow-700 mb-3">
-            Por vencer esta semana ({metricas.porVencer.length})
-          </h2>
+      {/* Listas de acción */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] tracking-wider text-warning">
+              POR VENCER
+            </span>
+            <span className="text-[11px] text-muted-foreground tabular">
+              {metricas.porVencer.length}
+            </span>
+          </div>
           {metricas.porVencer.length === 0 ? (
-            <p className="text-sm text-gray-400">Nadie por vencer.</p>
+            <p className="text-sm text-muted-foreground/60 py-1">
+              Nadie por vencer esta semana.
+            </p>
           ) : (
-            <ul className="space-y-2">
-              {metricas.porVencer.map((s) => (
-                <li key={s.id} className="flex justify-between text-sm">
-                  <Link href={`/socios/${s.id}`} className="text-blue-600 hover:underline">
-                    {s.nombre} {s.apellido}
-                  </Link>
-                  <span className="text-gray-500">vence {s.vencimiento}</span>
-                </li>
-              ))}
+            <ul>
+              {metricas.porVencer.map((s) => {
+                const dias = diasHastaVencimiento(new Date(s.vencimiento), hoy);
+                return (
+                  <li
+                    key={s.id}
+                    className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0"
+                  >
+                    <Link
+                      href={`/socios/${s.id}`}
+                      className="text-sm hover:text-primary transition-colors"
+                    >
+                      {s.nombre} {s.apellido}
+                    </Link>
+                    <span className="rounded-full border border-warning/30 bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning tabular">
+                      {dias === 0 ? "Vence hoy" : dias === 1 ? "1 día" : `${dias} días`}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
-        <div className="border rounded-lg p-4">
-          <h2 className="text-sm font-medium text-red-700 mb-3">
-            Vencidos recuperables ({metricas.vencidos.length})
-          </h2>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] tracking-wider text-danger">VENCIDOS</span>
+            <span className="text-[11px] text-muted-foreground tabular">
+              {metricas.vencidos.length}
+            </span>
+          </div>
           {metricas.vencidos.length === 0 ? (
-            <p className="text-sm text-gray-400">Nadie vencido.</p>
+            <p className="text-sm text-muted-foreground/60 py-1">Nadie vencido.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul>
               {metricas.vencidos.map((s) => (
-                <li key={s.id} className="flex justify-between text-sm">
-                  <Link href={`/socios/${s.id}`} className="text-blue-600 hover:underline">
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0"
+                >
+                  <Link
+                    href={`/socios/${s.id}`}
+                    className="text-sm hover:text-primary transition-colors"
+                  >
                     {s.nombre} {s.apellido}
                   </Link>
-                  <span className="text-gray-500">{s.telefono}</span>
+                  <span className="text-xs text-muted-foreground tabular">
+                    {s.telefono}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -73,26 +112,37 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Bloque 2: Números */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border rounded-lg p-4">
-          <p className="text-sm text-gray-500">Socios activos</p>
-          <p className="text-2xl font-bold">{metricas.totalActivos}</p>
+      {/* Métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
+            SOCIOS ACTIVOS
+          </div>
+          <div className="text-2xl font-semibold tracking-tight tabular">
+            {metricas.totalActivos}
+          </div>
         </div>
 
-        <div className="border rounded-lg p-4">
-          <p className="text-sm text-gray-500">Ingresos del mes</p>
-          <p className="text-2xl font-bold">
-            {formatearPesos(metricas.ingresosMesCentavos)}
-          </p>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
+            INGRESOS DEL MES
+          </div>
+          <div className="text-2xl font-semibold tracking-tight tabular">
+            {pesos(metricas.ingresosMesCentavos)}
+          </div>
         </div>
 
-        <div className="border rounded-lg p-4">
-          <p className="text-sm text-gray-500">Cobrado hoy</p>
-          <p className="text-2xl font-bold">
-            {formatearPesos(metricas.cobradoHoyCentavos)}
-          </p>
-          <p className="text-xs text-gray-400">{metricas.cantidadPagosHoy} pagos</p>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
+            COBRADO HOY
+          </div>
+          <div className="text-2xl font-semibold tracking-tight tabular">
+            {pesos(metricas.cobradoHoyCentavos)}
+          </div>
+          <div className="text-[11px] text-muted-foreground/60 mt-1 tabular">
+            {metricas.cantidadPagosHoy}{" "}
+            {metricas.cantidadPagosHoy === 1 ? "cuota" : "cuotas"}
+          </div>
         </div>
       </div>
     </div>

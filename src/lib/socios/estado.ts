@@ -22,3 +22,14 @@ export function calcularEstadoSocio(vencimiento: Date, hoy: Date): EstadoSocio {
 
     return "activo";
 }
+
+/** Días que faltan para el vencimiento. Negativo si ya venció. */
+export function diasHastaVencimiento(vencimiento: Date, hoy: Date): number {
+    const v = Date.UTC(
+        vencimiento.getUTCFullYear(),
+        vencimiento.getUTCMonth(),
+        vencimiento.getUTCDate()
+    );
+    const h = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+    return Math.round((v - h) / 86400000);
+}

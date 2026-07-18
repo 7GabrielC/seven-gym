@@ -43,6 +43,7 @@ export default async function SociosPage() {
         dni: f.dni,
         telefono: f.telefono,
         email: f.email,
+        vencimiento: f.vencimiento,
         estado: f.vencimiento
             ? calcularEstadoSocio(new Date(f.vencimiento), hoy)
             : (null as EstadoSocio | null),
@@ -50,15 +51,15 @@ export default async function SociosPage() {
     });
 
     return (
-        <div className="max-w-4xl mx-auto p-8">
-        <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold">Socios</h1>
-            <Link href="/socios/nuevo">
-            <Button>Nuevo socio</Button>
-            </Link>
-        </div>
+        <div className="max-w-6xl px-8 py-7">
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-semibold">Socios</h1>
+                <Link href="/socios/nuevo">
+                <Button>Nuevo socio</Button>
+                </Link>
+            </div>
 
-        <TablaSocios socios={sociosConEstado} />
+            <TablaSocios socios={sociosConEstado} />
         </div>
     );
 }
