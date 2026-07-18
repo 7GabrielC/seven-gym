@@ -112,7 +112,9 @@ export default async function FichaSocioPage({
                 Editar
                 </Button>
             </Link>
-            {soyDueno && <BotonBaja socioId={socio.id} />}
+            {soyDueno && (
+            <BotonBaja socioId={socio.id} nombre={`${socio.nombre} ${socio.apellido}`} />
+            )}
             </div>
         </div>
 

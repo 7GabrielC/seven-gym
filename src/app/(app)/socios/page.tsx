@@ -50,16 +50,27 @@ export default async function SociosPage() {
         }));
     });
 
-    return (
+        return (
         <div className="max-w-6xl px-8 py-7">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-semibold">Socios</h1>
-                <Link href="/socios/nuevo">
-                <Button>Nuevo socio</Button>
-                </Link>
+        <div className="flex items-center justify-between mb-6">
+            <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Socios</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+                {sociosConEstado.length} en total
+            </p>
+            <Link
+            href="/socios/baja"
+            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
+                Ver dados de baja →
+            </Link>
             </div>
+            <Link href="/socios/nuevo">
+            <Button>Nuevo socio</Button>
+            </Link>
+        </div>
 
-            <TablaSocios socios={sociosConEstado} />
+        <TablaSocios socios={sociosConEstado} />
         </div>
     );
 }
