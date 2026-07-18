@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { socios, suscripciones, pagos, planes } from "@/db/schema";
-import { eq, isNull, gte, lte, and, max, sum, count, desc, sql } from "drizzle-orm";
+import { eq, isNull, gte, lte, and, max, sum, count, desc, sql, inArray } from "drizzle-orm";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
 
 type SocioConEstado = {
@@ -68,6 +68,47 @@ export async function obtenerMetricas() {
     const vencidos = sociosConEstado.filter((s) => s.estado === "vencido");
     const activos = sociosConEstado.filter((s) => s.estado === "activo");
 
+    // Traer el plan de los socios en riesgo (una sola consulta, acotada a pocos)
+    const idsRelevantes = [...porVencer, ...vencidos].map((s) => s.id);
+    const planPorSocio = new Map<number, string>();
+
+    if (idsRelevantes.length > 0) {
+        const filasPlan = await db
+        .select({
+            socioId: suscripciones.socioId,
+            hasta: suscripciones.hasta,
+            plan: planes.nombre,
+        })
+        .from(suscripciones)
+        .innerJoin(planes, eq(suscripciones.planId, planes.id))
+        .where(
+            and(
+            inArray(suscripciones.socioId, idsRelevantes),
+            isNull(suscripciones.eliminadoEn)
+            )
+        );
+
+        const mejorPorSocio = new Map<number, { hasta: string; plan: string }>();
+        for (const f of filasPlan) {
+        const actual = mejorPorSocio.get(f.socioId);
+        if (!actual || f.hasta > actual.hasta) {
+            mejorPorSocio.set(f.socioId, { hasta: f.hasta, plan: f.plan });
+        }
+        }
+        for (const [socioId, v] of mejorPorSocio) {
+        planPorSocio.set(socioId, v.plan);
+        }
+    }
+
+    const porVencerConPlan = porVencer.map((s) => ({
+        ...s,
+        plan: planPorSocio.get(s.id) ?? "—",
+    }));
+    const vencidosConPlan = vencidos.map((s) => ({
+        ...s,
+        plan: planPorSocio.get(s.id) ?? "—",
+    }));
+
     // Ingresos del mes anterior, para la variación
     const primerDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
         .toISOString()
@@ -95,8 +136,8 @@ export async function obtenerMetricas() {
         : null;
 
     return {
-        porVencer,
-        vencidos,
+        porVencer: porVencerConPlan,
+        vencidos: vencidosConPlan,
         totalActivos: activos.length,
         ingresosMesCentavos: ingresosMes,
         cobradoHoyCentavos: Number(totalHoy[0]?.total ?? 0),

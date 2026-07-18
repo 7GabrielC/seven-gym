@@ -50,6 +50,15 @@
   --color-danger-soft: var(--danger-soft);
   --color-surface-2: var(--surface-2);
 
+  --color-accent-violet: var(--accent-violet);
+  --color-accent-violet-soft: var(--accent-violet-soft);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-teal-soft: var(--accent-teal-soft);
+  --color-accent-sky: var(--accent-sky);
+  --color-accent-sky-soft: var(--accent-sky-soft);
+  --color-accent-rose: var(--accent-rose);
+  --color-accent-rose-soft: var(--accent-rose-soft);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -86,6 +95,15 @@
   --danger: #dc2626;
   --danger-soft: #fdeaea;
   --destructive: #dc2626;
+
+  --accent-violet: #7c3aed;
+  --accent-violet-soft: #f3ebfe;
+  --accent-teal: #0d9488;
+  --accent-teal-soft: #e6f7f5;
+  --accent-sky: #0284c7;
+  --accent-sky-soft: #e5f4fc;
+  --accent-rose: #e11d48;
+  --accent-rose-soft: #fdeaef;
 
   --border: #e4e4e8;
   --input: #e4e4e8;
@@ -136,6 +154,15 @@
   --danger: #ff6b6b;
   --danger-soft: rgb(255 77 77 / 0.12);
   --destructive: #ff4d4d;
+
+  --accent-violet: #a78bfa;
+  --accent-violet-soft: rgb(167 139 250 / 0.12);
+  --accent-teal: #2dd4bf;
+  --accent-teal-soft: rgb(45 212 191 / 0.12);
+  --accent-sky: #38bdf8;
+  --accent-sky-soft: rgb(56 189 248 / 0.12);
+  --accent-rose: #fb7185;
+  --accent-rose-soft: rgb(251 113 133 / 0.12);
 
   --border: #23232d;
   --input: #23232d;

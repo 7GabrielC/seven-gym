@@ -14,12 +14,13 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 - Socios: alta, listado con buscador en vivo, ficha individual, edición, baja (soft delete), estado derivado (activo / por vencer / vencido / inactivo)
 - Pagos: registro con cálculo de vencimiento, precio congelado, encadenamiento de períodos, anulación con auditoría
 - Planes y precios: cambio de precio con historial, activar/desactivar planes, creación de planes nuevos (solo dueño)
-- Caja: apertura por turno, movimientos manuales (ingresos/egresos), cierre con arqueo, historial filtrado por rol
+- Movimientos: vista unificada de Ingresos (cuotas + otros ingresos) y Egresos (gastos con categorías), con métricas por método y totales del mes
+- Caja: apertura por turno, cierre con arqueo, ajustes excepcionales, historial filtrado por rol
 - Autenticación: login email/password, dos roles (dueño / recepcionista), sesiones, protección de páginas y acciones
 - Usuarios: creación de cuentas desde el sistema (solo dueño)
 - Dashboard: listas accionables (por vencer, vencidos) + métricas de ingresos
 
-**Pendiente:** módulo de gastos, observaciones, reportes, validación de formato (Zod), diseño visual.
+**Pendiente:** reportes (selector de período, comparaciones), observaciones, validación de formato (Zod), diseño visual.
 
 ---
 
@@ -31,7 +32,9 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 | Lenguaje | TypeScript | Front y back, un solo lenguaje |
 | Estilos | Tailwind CSS v4 | |
 | Componentes | shadcn/ui (preset **Nova**) | Usa **Base UI**, no Radix. Sin `asChild`. |
-| Base de datos | PostgreSQL (Neon, cloud) | |
+| Íconos | lucide-react | Íconos de las tarjetas del dashboard y listas |
+| Gráficos | Recharts | Área con degradado, donut, barras — todo vía tokens CSS |
+| Base de datos | PostgreSQL (Neon, cloud) | Región **São Paulo** (sa-east-1) |
 | ORM | Drizzle ORM + drizzle-kit | |
 | Driver DB | `@neondatabase/serverless` (Pool/websocket) | **No** `neon-http`: no soporta transacciones |
 | Auth | Better Auth | Adaptador Drizzle, email/password |
@@ -119,8 +122,11 @@ src/
 │   │   │   ├── tabla-socios.tsx# tabla + buscador (client)
 │   │   │   ├── nuevo/
 │   │   │   └── [id]/           # ficha, editar, botones baja/anular
-│   │   ├── pagos/nuevo/
-│   │   ├── caja/               # caja actual + historial/
+│   │   ├── pagos/nuevo/        # cobrar cuota
+│   │   ├── movimientos/
+│   │   │   ├── ingresos/       # cuotas + otros ingresos, con métricas
+│   │   │   └── egresos/        # gastos con categorías, con métricas
+│   │   ├── caja/               # arqueo del turno + historial/
 │   │   ├── planes/             # solo dueño: precios, historial, activar/desactivar
 │   │   └── usuarios/           # solo dueño
 │   ├── login/                  # fuera del grupo (sin menú, sin sesión)
@@ -129,7 +135,9 @@ src/
 ├── actions/                    # Server Actions
 │   ├── socios.ts               # crear, editar, dar de baja
 │   ├── pagos.ts                # registrar, anular
-│   ├── caja.ts                 # abrir, registrar movimiento, cerrar
+│   ├── caja.ts                 # abrir, ajuste, cerrar
+│   ├── gastos.ts               # registrar gasto (genera egreso de caja si es efectivo)
+│   ├── ingresos.ts             # registrar otro ingreso (genera ingreso de caja si es efectivo)
 │   ├── planes.ts               # cambiar precio, activar/desactivar, crear (solo dueño)
 │   └── usuarios.ts             # crear usuario (solo dueño)
 ├── components/
@@ -153,7 +161,7 @@ src/
 
 ## Modelo de datos
 
-**Dominio:** `socios`, `planes`, `precios_plan`, `suscripciones`, `pagos`, `sesiones_caja`, `movimientos_caja`, `observaciones` (sin usar aún).
+**Dominio:** `socios`, `planes`, `precios_plan`, `suscripciones`, `pagos`, `gastos`, `otros_ingresos`, `sesiones_caja`, `movimientos_caja`, `observaciones` (sin usar aún).
 
 **Better Auth:** `user` (con campo extra `rol`), `session`, `account`, `verification`.
 
@@ -161,9 +169,46 @@ Relaciones clave:
 - `socios` 1—N `suscripciones` N—1 `planes`
 - `suscripciones` 1—N `pagos`
 - `planes` 1—N `precios_plan` (historial, sin `vigente_hasta`)
-- `pagos` 1—1 `movimientos_caja` (solo si el pago fue en efectivo)
 - `sesiones_caja` 1—N `movimientos_caja`
-- `user` ← `pagos.registrado_por`, `sesiones_caja.usuario_id`
+- `movimientos_caja` tiene tres FK **opcionales y excluyentes**: `pago_id`, `gasto_id`, `otro_ingreso_id`. Si las tres están vacías, es un ajuste manual.
+- `user` ← `pagos.registrado_por`, `gastos.registrado_por`, `otros_ingresos.registrado_por`, `sesiones_caja.usuario_id`
+
+---
+
+## Sistema de diseño
+
+Modo claro y oscuro (toggle con `next-themes`, clase `.dark` en `<html>`). Todos los colores viven como variables CSS en `globals.css` — nunca se usa `text-gray-500` ni clases de color de Tailwind directas, siempre tokens.
+
+**Colores semánticos (fijos, significan algo — no se reasignan por estética):**
+- `success` / `success-soft`: plata que entra, resultado positivo, todo en orden
+- `warning` / `warning-soft`: por vencer, atención
+- `danger` / `danger-soft`: vencido, urgente, error
+- `brand-accent`: el verde de marca (`#31ff2e` oscuro / `#17a814` claro). Aparece con cuentagotas: indicador de sección activa en el menú, punto de "caja abierta", línea de resultado en gráficos. Nunca decorativo.
+
+**Colores de acento (decorativos, para distinguir categorías sin urgencia):**
+`accent-violet`, `accent-teal`, `accent-sky`, `accent-rose` (+ sus `-soft`). Se usan en las tarjetas del dashboard y en listas con varios tipos de eventos (ej. actividad reciente), donde cada categoría necesita su propio color pero ninguna es "mala" o "urgente". No se usan para estados de socios/pagos — ahí manda la paleta semántica.
+
+**Patrones repetidos:** tarjeta (`rounded-lg border border-border bg-card p-4`), número protagonista (`text-2xl font-semibold tracking-tight tabular`) con etiqueta chica arriba (`text-[11px] tracking-wider`), badge de días para vencimientos (componente `BadgeEstado`), punto de estado con halo (`size-1.5 rounded-full bg-brand-accent shadow-[0_0_6px_var(--brand-accent)]`).
+
+**Elemento firma:** los badges de vencimiento muestran los días ("4 días", "Vence hoy") en vez de una etiqueta genérica ("Por vencer"). Función `diasHastaVencimiento` en `src/lib/socios/estado.ts`.
+
+---
+
+## Modelo conceptual: Finanzas vs Caja
+
+Son **dos cosas distintas** y confundirlas rompe las dos. Es el concepto más importante del sistema.
+
+**Movimientos (finanzas)** responde *"¿qué entra y qué sale del negocio?"*. Incluye **todos los métodos** (efectivo y transferencia). Se acumula en el tiempo. Dos vistas:
+- **Ingresos** = cuotas (`pagos`) + otros ingresos (`otros_ingresos`)
+- **Egresos** = gastos (`gastos`)
+
+**Caja** responde *"¿cuadra el efectivo del cajón de este turno?"*. **Solo efectivo**, por turno, se abre y se cierra con arqueo.
+
+**Cómo se relacionan:** cada movimiento se registra **una sola vez** en Movimientos, con su método real. Si el método es efectivo, el sistema genera **automáticamente** el movimiento de caja correspondiente. Si es transferencia, no toca la caja.
+
+La Caja **no es donde se cargan cosas**: es el espejo del efectivo. El formulario de ajuste que tiene es solo para correcciones excepcionales (ver Procedimientos operativos), no para el uso diario.
+
+Este patrón se repite en los tres orígenes: `pagos`, `gastos`, `otros_ingresos`. Cada uno tiene su FK opcional en `movimientos_caja` (`pago_id`, `gasto_id`, `otro_ingreso_id`).
 
 ---
 
@@ -184,6 +229,9 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 11. **Pago dividido (efectivo + transferencia) = dos pagos separados**, cada uno con su método real.
 12. **Cambiar un precio NO edita el precio viejo:** inserta una fila nueva en `precios_plan` con `vigente_desde = hoy`. El precio vigente en una fecha X es el registro con el `vigente_desde` más grande que sea ≤ X. Excepción: si ya se cambió el precio hoy, se actualiza esa fila (evita filas duplicadas con la misma fecha).
 13. **Los planes no se borran, se desactivan.** Un plan inactivo no aparece en el formulario de pagos, pero los pagos históricos que lo referencian siguen intactos.
+14. **Todo se registra en Movimientos, no en la Caja.** Un gasto se carga en Egresos (con su método real); si es en efectivo, la caja lo refleja sola. El ajuste de caja es solo para correcciones excepcionales.
+15. **Las métricas no se guardan, se calculan.** No hay proceso de "cierre de mes". El mes es un filtro (`fecha >= primer día del mes actual`) que se calcula en cada request. Los datos crudos nunca se borran, así que cualquier período se puede recalcular siempre.
+16. **Cobrar cuota y otro ingreso son flujos separados a propósito.** Cobrar una cuota necesita socio + plan y dispara la lógica de vencimiento; un otro ingreso solo necesita descripción + monto. Un formulario único que mute según el tipo sería más confuso, no menos (y el inventario sería un tercer flujo distinto).
 
 ---
 
@@ -192,8 +240,9 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 | Acción | Dueño | Recepcionista |
 |---|---|---|
 | Socios: alta, edición, baja | ✓ | ✓ |
-| Registrar pagos | ✓ | ✓ |
-| Abrir/cerrar su caja, movimientos | ✓ | ✓ |
+| Cobrar cuotas | ✓ | ✓ |
+| Registrar ingresos y egresos | ✓ | ✓ |
+| Abrir/cerrar su caja, ajustes | ✓ | ✓ |
 | Ver historial de cajas | todas | solo las suyas |
 | Anular pagos | ✓ | ✗ |
 | Planes y precios | ✓ | ✗ |
@@ -238,7 +287,7 @@ En `/docs`:
 
 **Pago cargado al socio equivocado, detectado con la caja ya cerrada:**
 1. El dueño anula el pago (motivo: "cargado al socio equivocado, era de X").
-2. El recepcionista carga el pago correcto al socio real.
-3. Registra un **egreso manual** por el mismo monto, con concepto: "Corrección: pago de X ya cobrado el [fecha], contabilizado en esa caja".
+2. El recepcionista cobra la cuota correcta al socio real.
+3. En la Caja, usa **"Registrar un ajuste de caja"** → egreso por el mismo monto, motivo: "Corrección: pago de X ya cobrado el [fecha], contabilizado en esa caja".
 
-Esto evita un faltante fantasma en la caja actual y deja rastro escrito del error. El arqueo del turno original no se toca (la plata sí entró ese día).
+Esto evita un faltante fantasma en la caja actual y deja rastro escrito del error. El arqueo del turno original no se toca (la plata sí entró ese día). **Este es el único caso donde se usa el ajuste de caja** — los gastos e ingresos reales van siempre por Movimientos.
