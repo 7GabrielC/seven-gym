@@ -232,6 +232,8 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 14. **Todo se registra en Movimientos, no en la Caja.** Un gasto se carga en Egresos (con su método real); si es en efectivo, la caja lo refleja sola. El ajuste de caja es solo para correcciones excepcionales.
 15. **Las métricas no se guardan, se calculan.** No hay proceso de "cierre de mes". El mes es un filtro (`fecha >= primer día del mes actual`) que se calcula en cada request. Los datos crudos nunca se borran, así que cualquier período se puede recalcular siempre.
 16. **Cobrar cuota y otro ingreso son flujos separados a propósito.** Cobrar una cuota necesita socio + plan y dispara la lógica de vencimiento; un otro ingreso solo necesita descripción + monto. Un formulario único que mute según el tipo sería más confuso, no menos (y el inventario sería un tercer flujo distinto).
+17. **Dar de baja a un socio cierra también su suscripción activa** (si tiene). Evita que quede una suscripción "vigente" huérfana de un socio inexistente.
+18. **Reactivar a un socio dado de baja NO revive su suscripción vieja.** Vuelve sin plan, como si fuera su primer día — coherente con que dejó de pagar y hay que cobrarle de nuevo. El DNI sigue siendo único incluso para dados de baja: si alguien intenta crear un socio con un DNI que pertenece a alguien de baja, el sistema ofrece reactivarlo en vez de bloquear o duplicar.
 
 ---
 
