@@ -1,7 +1,7 @@
 import { requerirSesion } from "@/lib/session";
 import { db } from "@/db";
 import { sesionesCaja, movimientosCaja, user } from "@/db/schema";
-import { eq, and, isNotNull, desc } from "drizzle-orm";
+import { eq, and, isNotNull, desc, inArray } from "drizzle-orm";
 import Link from "next/link";
 
 function pesos(centavos: number): string {
@@ -37,26 +37,35 @@ export default async function HistorialCajaPage() {
         .where(condiciones)
         .orderBy(desc(sesionesCaja.cerradaEn));
 
-    // Para cada caja, calcular el esperado y la diferencia
-    const cajasConDatos = await Promise.all(
-        cajas.map(async (caja) => {
-        const movs = await db
-            .select()
+    // Todos los movimientos de todas esas cajas, en UNA consulta
+    const idsCajas = cajas.map((c) => c.id);
+    const movs =
+        idsCajas.length > 0
+        ? await db
+            .select({
+                sesionCajaId: movimientosCaja.sesionCajaId,
+                tipo: movimientosCaja.tipo,
+                monto: movimientosCaja.montoCentavos,
+            })
             .from(movimientosCaja)
-            .where(eq(movimientosCaja.sesionCajaId, caja.id));
+            .where(inArray(movimientosCaja.sesionCajaId, idsCajas))
+        : [];
 
-        let esperado = caja.apertura;
-        for (const m of movs) {
-            if (m.tipo === "ingreso") esperado += m.montoCentavos;
-            else esperado -= m.montoCentavos;
-        }
+    // Agrupar el saldo de cada caja en memoria
+    const saldoPorCaja = new Map<number, number>();
+    for (const m of movs) {
+        const actual = saldoPorCaja.get(m.sesionCajaId) ?? 0;
+        saldoPorCaja.set(
+        m.sesionCajaId,
+        m.tipo === "ingreso" ? actual + m.monto : actual - m.monto
+        );
+    }
 
+    const cajasConDatos = cajas.map((caja) => {
+        const esperado = caja.apertura + (saldoPorCaja.get(caja.id) ?? 0);
         const declarado = caja.cierreDeclarado ?? 0;
-        const diferencia = declarado - esperado;
-
-        return { ...caja, esperado, declarado, diferencia };
-        })
-    );
+        return { ...caja, esperado, declarado, diferencia: declarado - esperado };
+    });
 
     return (
         <div className="max-w-4xl mx-auto p-8">
@@ -90,15 +99,15 @@ export default async function HistorialCajaPage() {
                         ? new Date(caja.cerradaEn).toLocaleDateString("es-AR")
                         : "—"}
                     </td>
-                    <td className="py-2 pr-4">{pesos(caja.apertura)}</td>
-                    <td className="py-2 pr-4">{pesos(caja.esperado)}</td>
-                    <td className="py-2 pr-4">{pesos(caja.declarado)}</td>
+                    <td className="py-2 pr-4 tabular">{pesos(caja.apertura)}</td>
+                    <td className="py-2 pr-4 tabular">{pesos(caja.esperado)}</td>
+                    <td className="py-2 pr-4 tabular">{pesos(caja.declarado)}</td>
                     <td className="py-2 pr-4">
                     <span
                         className={
                         caja.diferencia === 0
-                            ? "text-green-600"
-                            : "text-red-600 font-medium"
+                            ? "text-success"
+                            : "text-danger font-medium"
                         }
                     >
                         {caja.diferencia === 0 ? "OK" : pesos(caja.diferencia)}

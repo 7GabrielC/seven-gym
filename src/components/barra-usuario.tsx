@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { BotonTema } from "@/components/boton-tema";
 
 export function BarraUsuario({ nombre, rol }: { nombre: string; rol: string }) {
     const router = useRouter();
@@ -14,12 +15,13 @@ export function BarraUsuario({ nombre, rol }: { nombre: string; rol: string }) {
 
     return (
         <div className="flex items-center gap-3 text-sm">
-        <span className="text-gray-600">
-            {nombre} <span className="text-gray-400">({rol})</span>
-        </span>
-        <Button variant="outline" size="sm" onClick={cerrarSesion}>
-            Cerrar sesión
-        </Button>
+            <span className="text-muted-foreground">
+                {nombre} <span className="opacity-60">({rol})</span>
+            </span>
+            <BotonTema />
+            <Button variant="outline" size="sm" onClick={cerrarSesion}>
+                Cerrar sesión
+            </Button>
         </div>
     );
 }

@@ -35,7 +35,9 @@ export const preciosPlan = pgTable("precios_plan", {
     precioCentavos: bigint("precio_centavos", { mode: "number" }).notNull(),
     vigenteDesde: date("vigente_desde").notNull(),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
-});
+}, (table) => [
+    index("precios_plan_plan_idx").on(table.planId),
+]);
 
 export const suscripciones = pgTable("suscripciones", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -45,7 +47,10 @@ export const suscripciones = pgTable("suscripciones", {
     hasta: date("hasta").notNull(),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
     eliminadoEn: timestamp("eliminado_en"),
-});
+}, (table) => [
+    index("suscripciones_socio_idx").on(table.socioId),
+    index("suscripciones_hasta_idx").on(table.hasta),
+]);
 
 export const metodoPagoEnum = pgEnum("metodo_pago", [
     "efectivo", 
@@ -78,7 +83,10 @@ export const pagos = pgTable("pagos", {
     anuladoPor: text("anulado_por").references(() => user.id),
     motivoAnulacion: text("motivo_anulacion"),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
-});
+}, (table) => [
+    index("pagos_suscripcion_idx").on(table.suscripcionId),
+    index("pagos_fecha_idx").on(table.fechaPago),
+]);
 
 export const sesionesCaja = pgTable("sesiones_caja", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -87,7 +95,9 @@ export const sesionesCaja = pgTable("sesiones_caja", {
     montoCierreDeclarado: bigint("monto_cierre_declarado", { mode: "number" }),
     abiertaEn: timestamp("abierta_en").notNull().defaultNow(),
     cerradaEn: timestamp("cerrada_en"),
-});
+}, (table) => [
+    index("sesiones_caja_usuario_idx").on(table.usuarioId),
+]);
 
 export const movimientosCaja = pgTable("movimientos_caja", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -101,7 +111,9 @@ export const movimientosCaja = pgTable("movimientos_caja", {
     nombreProspecto: varchar("nombre_prospecto", { length: 150 }),
     telefonoProspecto: varchar("telefono_prospecto", { length: 30 }),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
-});
+}, (table) => [
+    index("movimientos_sesion_idx").on(table.sesionCajaId),
+]);
 
 export const observaciones = pgTable("observaciones", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -213,7 +225,9 @@ export const gastos = pgTable("gastos", {
     registradoPor: text("registrado_por").notNull().references(() => user.id),
     eliminadoEn: timestamp("eliminado_en"),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
-});
+}, (table) => [
+    index("gastos_fecha_idx").on(table.fecha),
+]);
 
 export const otrosIngresos = pgTable("otros_ingresos", {
     id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -224,4 +238,6 @@ export const otrosIngresos = pgTable("otros_ingresos", {
     registradoPor: text("registrado_por").notNull().references(() => user.id),
     eliminadoEn: timestamp("eliminado_en"),
     creadoEn: timestamp("creado_en").notNull().defaultNow(),
-});
+}, (table) => [
+    index("otros_ingresos_fecha_idx").on(table.fecha),
+]);

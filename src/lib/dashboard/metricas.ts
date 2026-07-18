@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { socios, suscripciones, pagos } from "@/db/schema";
-import { eq, desc, isNull, gte, and } from "drizzle-orm";
+import { eq, isNull, gte, and, max, sum, count } from "drizzle-orm";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
 
 type SocioConEstado = {
@@ -14,76 +14,66 @@ type SocioConEstado = {
 
 export async function obtenerMetricas() {
     const hoy = new Date();
-
-    // Traer todos los socios activos (no dados de baja)
-    const listaSocios = await db
-        .select()
-        .from(socios)
-        .where(isNull(socios.eliminadoEn));
-
-    // Calcular el estado de cada uno según su última suscripción
-    const sociosConEstado: SocioConEstado[] = [];
-
-    for (const socio of listaSocios) {
-        const [ultimaSuscripcion] = await db
-            .select()
-            .from(suscripciones)
-            .where(
-                and(
-                eq(suscripciones.socioId, socio.id),
-                isNull(suscripciones.eliminadoEn)
-                )
-            )
-            .orderBy(desc(suscripciones.hasta))
-            .limit(1);
-
-        if (ultimaSuscripcion) {
-        const estado = calcularEstadoSocio(new Date(ultimaSuscripcion.hasta), hoy);
-        sociosConEstado.push({
-            id: socio.id,
-            nombre: socio.nombre,
-            apellido: socio.apellido,
-            telefono: socio.telefono,
-            vencimiento: ultimaSuscripcion.hasta,
-            estado,
-        });
-        }
-    }
-
-    // Separar por estado para las listas de acción
-    const porVencer = sociosConEstado.filter((s) => s.estado === "por_vencer");
-    const vencidos = sociosConEstado.filter((s) => s.estado === "vencido");
-    const activos = sociosConEstado.filter((s) => s.estado === "activo");
-
-    // Ingresos del mes: sumar pagos desde el día 1 del mes actual
+    const hoyStr = hoy.toISOString().slice(0, 10);
     const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
         .toISOString()
         .slice(0, 10);
 
-    const pagosDelMes = await db
-        .select()
+    const [filas, totalMes, totalHoy] = await Promise.all([
+        // Cada socio con su vencimiento, en una consulta
+        db
+        .select({
+            id: socios.id,
+            nombre: socios.nombre,
+            apellido: socios.apellido,
+            telefono: socios.telefono,
+            vencimiento: max(suscripciones.hasta),
+        })
+        .from(socios)
+        .leftJoin(
+            suscripciones,
+            and(
+            eq(suscripciones.socioId, socios.id),
+            isNull(suscripciones.eliminadoEn)
+            )
+        )
+        .where(isNull(socios.eliminadoEn))
+        .groupBy(socios.id),
+
+        // Ingresos del mes: la base suma, no JavaScript
+        db
+        .select({ total: sum(pagos.montoCentavos) })
         .from(pagos)
-        .where(and(gte(pagos.fechaPago, primerDiaMes), eq(pagos.anulado, false)));
+        .where(and(eq(pagos.anulado, false), gte(pagos.fechaPago, primerDiaMes))),
 
-    const ingresosMesCentavos = pagosDelMes.reduce(
-        (total, pago) => total + pago.montoCentavos,
-        0
-    );
+        // Cobrado hoy
+        db
+        .select({ total: sum(pagos.montoCentavos), n: count() })
+        .from(pagos)
+        .where(and(eq(pagos.anulado, false), eq(pagos.fechaPago, hoyStr))),
+    ]);
 
-    // Cobrado hoy
-    const hoyStr = hoy.toISOString().slice(0, 10);
-    const pagosHoy = pagosDelMes.filter((p) => p.fechaPago === hoyStr);
-    const cobradoHoyCentavos = pagosHoy.reduce(
-        (total, pago) => total + pago.montoCentavos,
-        0
-    );
+    const sociosConEstado: SocioConEstado[] = filas
+        .filter((f) => f.vencimiento !== null)
+        .map((f) => ({
+        id: f.id,
+        nombre: f.nombre,
+        apellido: f.apellido,
+        telefono: f.telefono,
+        vencimiento: f.vencimiento!,
+        estado: calcularEstadoSocio(new Date(f.vencimiento!), hoy),
+        }));
+
+    const porVencer = sociosConEstado.filter((s) => s.estado === "por_vencer");
+    const vencidos = sociosConEstado.filter((s) => s.estado === "vencido");
+    const activos = sociosConEstado.filter((s) => s.estado === "activo");
 
     return {
         porVencer,
         vencidos,
         totalActivos: activos.length,
-        ingresosMesCentavos,
-        cobradoHoyCentavos,
-        cantidadPagosHoy: pagosHoy.length,
+        ingresosMesCentavos: Number(totalMes[0]?.total ?? 0),
+        cobradoHoyCentavos: Number(totalHoy[0]?.total ?? 0),
+        cantidadPagosHoy: Number(totalHoy[0]?.n ?? 0),
     };
 }

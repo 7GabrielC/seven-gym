@@ -7,7 +7,7 @@ import {
     gastos,
     otrosIngresos,
 } from "@/db/schema";
-import { eq, and, isNull, gte, lte, lt, isNotNull } from "drizzle-orm";
+import { eq, and, isNull, gte, lte, isNotNull, count, sql } from "drizzle-orm";
 import type { Periodo } from "./periodo";
 
 export type ResumenFinanciero = {
@@ -144,95 +144,74 @@ export async function desglosePorPlan(p: Periodo): Promise<DesglosePlan[]> {
 }
 
 export async function metricasSocios(p: Periodo): Promise<MetricasSocios> {
-    // Altas: socios creados dentro del período
-    const altas = await db
-        .select({ id: socios.id })
-        .from(socios)
-        .where(
-        and(
-            gte(socios.creadoEn, new Date(p.desde + "T00:00:00Z")),
-            lte(socios.creadoEn, new Date(p.hasta + "T23:59:59Z"))
-        )
-        );
+    const desdeTs = new Date(p.desde + "T00:00:00Z");
+    const hastaTs = new Date(p.hasta + "T23:59:59Z");
 
-    // Bajas: socios dados de baja dentro del período
-    const bajas = await db
-        .select({ id: socios.id })
+    const [altas, bajas, renovacion, activos] = await Promise.all([
+        // Altas del período
+        db
+        .select({ n: count() })
+        .from(socios)
+        .where(and(gte(socios.creadoEn, desdeTs), lte(socios.creadoEn, hastaTs))),
+
+        // Bajas del período
+        db
+        .select({ n: count() })
         .from(socios)
         .where(
-        and(
+            and(
             isNotNull(socios.eliminadoEn),
-            gte(socios.eliminadoEn, new Date(p.desde + "T00:00:00Z")),
-            lte(socios.eliminadoEn, new Date(p.hasta + "T23:59:59Z"))
-        )
-        );
+            gte(socios.eliminadoEn, desdeTs),
+            lte(socios.eliminadoEn, hastaTs)
+            )
+        ),
 
-    // Suscripciones que vencieron dentro del período
-    const vencidas = await db
-        .select({ socioId: suscripciones.socioId, hasta: suscripciones.hasta })
+        // Vencidos y renovados, en UNA consulta.
+        // Por cada suscripción que venció en el período, preguntamos si el socio
+        // tiene otra suscripción posterior. El EXISTS lo resuelve la base.
+        db
+        .select({
+            vencieron: count(),
+            renovaron: sql<number>`count(*) filter (where exists (
+            select 1 from ${suscripciones} s2
+            where s2.socio_id = ${suscripciones.socioId}
+                and s2.eliminado_en is null
+                and s2.desde >= ${suscripciones.hasta}
+            ))`,
+        })
         .from(suscripciones)
         .where(
-        and(
+            and(
             isNull(suscripciones.eliminadoEn),
             gte(suscripciones.hasta, p.desde),
             lte(suscripciones.hasta, p.hasta)
-        )
-        );
-
-    // De los que vencieron, ¿cuántos tienen una suscripción posterior?
-    let renovaron = 0;
-    for (const v of vencidas) {
-        const [posterior] = await db
-        .select({ id: suscripciones.id })
-        .from(suscripciones)
-        .where(
-            and(
-            eq(suscripciones.socioId, v.socioId),
-            isNull(suscripciones.eliminadoEn),
-            gte(suscripciones.hasta, v.hasta),
-            isNotNull(suscripciones.id)
             )
-        )
-        .limit(2);
-        // Si hay más de una con hasta >= la vencida, renovó
-        const todas = await db
-        .select({ id: suscripciones.id })
-        .from(suscripciones)
-        .where(
-            and(
-            eq(suscripciones.socioId, v.socioId),
-            isNull(suscripciones.eliminadoEn),
-            gte(suscripciones.hasta, v.hasta)
-            )
-        );
-        if (todas.length > 1) renovaron++;
-    }
+        ),
 
-    // Activos al cierre del período: socios no dados de baja
-    // con una suscripción cuyo "hasta" es >= la fecha de cierre
-    const activos = await db
-        .select({ socioId: suscripciones.socioId })
+        // Socios activos al cierre del período
+        db
+        .select({ n: sql<number>`count(distinct ${suscripciones.socioId})` })
         .from(suscripciones)
         .innerJoin(socios, eq(suscripciones.socioId, socios.id))
         .where(
-        and(
+            and(
             isNull(suscripciones.eliminadoEn),
             isNull(socios.eliminadoEn),
             gte(suscripciones.hasta, p.hasta),
             lte(suscripciones.desde, p.hasta)
-        )
-        );
-    const activosUnicos = new Set(activos.map((a) => a.socioId));
+            )
+        ),
+    ]);
 
-    const tasaRenovacion =
-        vencidas.length > 0 ? (renovaron / vencidas.length) * 100 : null;
+    const vencieron = Number(renovacion[0]?.vencieron ?? 0);
+    const renovaron = Number(renovacion[0]?.renovaron ?? 0);
 
     return {
-        altas: altas.length,
-        bajas: bajas.length,
-        activosAlCierre: activosUnicos.size,
-        vencieronEnPeriodo: vencidas.length,
+        altas: Number(altas[0]?.n ?? 0),
+        bajas: Number(bajas[0]?.n ?? 0),
+        activosAlCierre: Number(activos[0]?.n ?? 0),
+        vencieronEnPeriodo: vencieron,
         renovaron,
-        tasaRenovacion,
+        tasaRenovacion: vencieron > 0 ? (renovaron / vencieron) * 100 : null,
     };
 }
