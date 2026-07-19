@@ -56,24 +56,28 @@ export function FilaPlan(plan: Props) {
     }
 
     return (
-        <div className={`border rounded-lg p-4 ${!plan.activo ? "opacity-60" : ""}`}>
+        <div
+        className={`rounded-lg border border-border bg-card p-4 transition-opacity duration-150 ${
+            !plan.activo ? "opacity-50" : ""
+        }`}
+        >
         <div className="flex items-start justify-between gap-4">
             <div>
             <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{plan.nombre}</h3>
+                <h3 className="font-medium">{plan.nombre}</h3>
                 {!plan.activo && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                     Inactivo
                 </span>
                 )}
                 {plan.usoUnico && (
-                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs text-primary">
                     Uso único
                 </span>
                 )}
             </div>
-            <p className="text-sm text-gray-500 mt-1">
-                Duración: {plan.duracionValor}{" "}
+            <p className="text-sm text-muted-foreground mt-1">
+                {plan.duracionValor}{" "}
                 {plan.duracionUnidad === "mes"
                 ? plan.duracionValor === 1
                     ? "mes"
@@ -82,13 +86,13 @@ export function FilaPlan(plan: Props) {
             </p>
             </div>
 
-            <div className="text-right">
-            <p className="text-xl font-bold">
+            <div className="text-right shrink-0">
+            <p className="text-xl font-semibold tabular">
                 {plan.precioActual !== null ? pesos(plan.precioActual) : "Sin precio"}
             </p>
             <button
                 onClick={() => setVerHistorial(!verHistorial)}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
                 {verHistorial ? "Ocultar" : "Ver"} historial ({plan.historial.length})
             </button>
@@ -96,19 +100,19 @@ export function FilaPlan(plan: Props) {
         </div>
 
         {verHistorial && (
-            <div className="mt-3 pt-3 border-t">
+            <div className="mt-3 pt-3 border-t border-border/50">
             <ul className="space-y-1">
                 {plan.historial.map((p, i) => (
-                <li key={i} className="flex justify-between text-xs text-gray-600">
+                <li key={i} className="flex justify-between text-xs text-muted-foreground">
                     <span>Desde {p.vigenteDesde}</span>
-                    <span>{pesos(p.precioCentavos)}</span>
+                    <span className="tabular">{pesos(p.precioCentavos)}</span>
                 </li>
                 ))}
             </ul>
             </div>
         )}
 
-        <div className="mt-4 pt-3 border-t">
+        <div className="mt-4 pt-3 border-t border-border/50">
             {editando ? (
             <div className="space-y-2">
                 <div className="flex gap-2">
@@ -135,22 +139,17 @@ export function FilaPlan(plan: Props) {
                     Cancelar
                 </Button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                 Rige desde hoy. El precio anterior queda en el historial.
                 </p>
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && <p className="text-sm text-danger">{error}</p>}
             </div>
             ) : (
             <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => setEditando(true)}>
                 Cambiar precio
                 </Button>
-                <Button
-                size="sm"
-                variant="ghost"
-                onClick={toggleActivo}
-                disabled={cargando}
-                >
+                <Button size="sm" variant="ghost" onClick={toggleActivo} disabled={cargando}>
                 {plan.activo ? "Desactivar" : "Activar"}
                 </Button>
             </div>

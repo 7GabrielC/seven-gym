@@ -17,6 +17,8 @@ export function FormNuevoPlan() {
     const [error, setError] = useState("");
     const [exito, setExito] = useState("");
     const [cargando, setCargando] = useState(false);
+    const [unidad, setUnidad] = useState("mes");
+    const [unico, setUnico] = useState("no");
 
     async function manejarSubmit(formData: FormData) {
         setError("");
@@ -30,18 +32,20 @@ export function FormNuevoPlan() {
         setExito("Plan creado correctamente.");
         const form = document.getElementById("form-plan") as HTMLFormElement;
         form?.reset();
+        setUnidad("mes");
+        setUnico("no");
         }
     }
 
     return (
-        <form id="form-plan" action={manejarSubmit} className="space-y-4 max-w-md">
-        <div className="space-y-2">
+        <form id="form-plan" action={manejarSubmit} className="space-y-4">
+        <div className="space-y-1.5">
             <Label htmlFor="nombre">Nombre del plan</Label>
             <Input id="nombre" name="nombre" placeholder="Ej: Semestral" required />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
             <Label htmlFor="duracionValor">Duración</Label>
             <Input
                 id="duracionValor"
@@ -53,11 +57,16 @@ export function FormNuevoPlan() {
             />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
             <Label>Unidad</Label>
-            <Select name="duracionUnidad" defaultValue="mes" required>
+            <Select
+                name="duracionUnidad"
+                value={unidad}
+                onValueChange={(v) => setUnidad(v ?? "mes")}
+                required
+            >
                 <SelectTrigger>
-                <SelectValue />
+                <SelectValue>{unidad === "mes" ? "Meses" : "Días"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                 <SelectItem value="mes">Meses</SelectItem>
@@ -67,7 +76,7 @@ export function FormNuevoPlan() {
             </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
             <Label htmlFor="precio">Precio inicial</Label>
             <Input
             id="precio"
@@ -80,34 +89,41 @@ export function FormNuevoPlan() {
             />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
             <Label>¿Uso único por socio?</Label>
-            <Select name="usoUnico" defaultValue="no" required>
+            <Select
+            name="usoUnico"
+            value={unico}
+            onValueChange={(v) => setUnico(v ?? "no")}
+            required
+            >
             <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                {unico === "no" ? "No, se puede repetir" : "Sí, una vez por socio"}
+                </SelectValue>
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="no">No, se puede repetir</SelectItem>
                 <SelectItem value="si">Sí, una vez por socio</SelectItem>
             </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
             Como el plan Bienvenida: cada socio puede contratarlo una sola vez.
             </p>
         </div>
 
         {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+            <p className="text-sm text-danger bg-danger-soft border border-danger/25 rounded-md px-3 py-2">
             {error}
             </p>
         )}
         {exito && (
-            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2">
+            <p className="text-sm text-success bg-success-soft border border-success/25 rounded-md px-3 py-2">
             {exito}
             </p>
         )}
 
-        <Button type="submit" disabled={cargando}>
+        <Button type="submit" className="w-full" disabled={cargando}>
             {cargando ? "Creando..." : "Crear plan"}
         </Button>
         </form>
