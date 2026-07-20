@@ -4,8 +4,14 @@ import { isNull, eq, and, max, desc } from "drizzle-orm";
 import { FormPago } from "./form-pago";
 import { requerirSesion } from "@/lib/session";
 
-export default async function NuevoPagoPage() {
+export default async function NuevoPagoPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ socio?: string }>;
+}) {
     await requerirSesion();
+    const params = await searchParams;
+    const socioPreseleccionado = params.socio ? Number(params.socio) : null;
 
     // Cada socio con su vencimiento actual (una sola consulta, mismo patrón que /socios)
     const listaSocios = await db
@@ -57,7 +63,7 @@ export default async function NuevoPagoPage() {
         <p className="text-sm text-muted-foreground mb-6">
             Elegí el socio y el plan para registrar el pago.
         </p>
-        <FormPago socios={listaSocios} planes={listaPlanes} />
+        <FormPago socios={listaSocios} planes={listaPlanes} socioInicial={socioPreseleccionado} />
         </div>
     );
 }

@@ -36,8 +36,16 @@ const etiquetaMetodo: Record<string, string> = {
     transferencia: "Transferencia",
 };
 
-export function FormPago({ socios, planes }: { socios: Socio[]; planes: Plan[] }) {
-    const [socioId, setSocioId] = useState<number | null>(null);
+export function FormPago({
+    socios,
+    planes,
+    socioInicial,
+}: {
+    socios: Socio[];
+    planes: Plan[];
+    socioInicial?: number | null;
+}) {
+    const [socioId, setSocioId] = useState<number | null>(socioInicial ?? null);
     const [planId, setPlanId] = useState("");
     const [metodo, setMetodo] = useState("");
     const [error, setError] = useState("");

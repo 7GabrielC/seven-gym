@@ -5,119 +5,182 @@ import { eq, and, isNotNull, desc, inArray } from "drizzle-orm";
 import Link from "next/link";
 
 function pesos(centavos: number): string {
-    return (centavos / 100).toLocaleString("es-AR", {
-        style: "currency",
-        currency: "ARS",
-    });
+  return (centavos / 100).toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+  });
 }
 
 export default async function HistorialCajaPage() {
-    const session = await requerirSesion();
-    const soyDueno = session.user.rol === "dueño";
+  const session = await requerirSesion();
+  const soyDueno = session.user.rol === "dueño";
 
-    // Traer cajas cerradas. El dueño ve todas; el recepcionista solo las suyas.
-    const condiciones = soyDueno
-        ? isNotNull(sesionesCaja.cerradaEn)
-        : and(
-            isNotNull(sesionesCaja.cerradaEn),
-            eq(sesionesCaja.usuarioId, session.user.id)
-        );
+  const condiciones = soyDueno
+    ? isNotNull(sesionesCaja.cerradaEn)
+    : and(isNotNull(sesionesCaja.cerradaEn), eq(sesionesCaja.usuarioId, session.user.id));
 
-    const cajas = await db
-        .select({
-        id: sesionesCaja.id,
-        apertura: sesionesCaja.montoApertura,
-        cierreDeclarado: sesionesCaja.montoCierreDeclarado,
-        abiertaEn: sesionesCaja.abiertaEn,
-        cerradaEn: sesionesCaja.cerradaEn,
-        nombreUsuario: user.name,
-        })
-        .from(sesionesCaja)
-        .innerJoin(user, eq(sesionesCaja.usuarioId, user.id))
-        .where(condiciones)
-        .orderBy(desc(sesionesCaja.cerradaEn));
+  const cajas = await db
+    .select({
+      id: sesionesCaja.id,
+      apertura: sesionesCaja.montoApertura,
+      cierreDeclarado: sesionesCaja.montoCierreDeclarado,
+      abiertaEn: sesionesCaja.abiertaEn,
+      cerradaEn: sesionesCaja.cerradaEn,
+      nombreUsuario: user.name,
+    })
+    .from(sesionesCaja)
+    .innerJoin(user, eq(sesionesCaja.usuarioId, user.id))
+    .where(condiciones)
+    .orderBy(desc(sesionesCaja.cerradaEn));
 
-    // Todos los movimientos de todas esas cajas, en UNA consulta
-    const idsCajas = cajas.map((c) => c.id);
-    const movs =
-        idsCajas.length > 0
-        ? await db
-            .select({
-                sesionCajaId: movimientosCaja.sesionCajaId,
-                tipo: movimientosCaja.tipo,
-                monto: movimientosCaja.montoCentavos,
-            })
-            .from(movimientosCaja)
-            .where(inArray(movimientosCaja.sesionCajaId, idsCajas))
-        : [];
+  const idsCajas = cajas.map((c) => c.id);
+  const movs =
+    idsCajas.length > 0
+      ? await db
+          .select({
+            sesionCajaId: movimientosCaja.sesionCajaId,
+            tipo: movimientosCaja.tipo,
+            monto: movimientosCaja.montoCentavos,
+          })
+          .from(movimientosCaja)
+          .where(inArray(movimientosCaja.sesionCajaId, idsCajas))
+      : [];
 
-    // Agrupar el saldo de cada caja en memoria
-    const saldoPorCaja = new Map<number, number>();
-    for (const m of movs) {
-        const actual = saldoPorCaja.get(m.sesionCajaId) ?? 0;
-        saldoPorCaja.set(
-        m.sesionCajaId,
-        m.tipo === "ingreso" ? actual + m.monto : actual - m.monto
-        );
-    }
+  const saldoPorCaja = new Map<number, number>();
+  for (const m of movs) {
+    const actual = saldoPorCaja.get(m.sesionCajaId) ?? 0;
+    saldoPorCaja.set(
+      m.sesionCajaId,
+      m.tipo === "ingreso" ? actual + m.monto : actual - m.monto
+    );
+  }
 
-    const cajasConDatos = cajas.map((caja) => {
-        const esperado = caja.apertura + (saldoPorCaja.get(caja.id) ?? 0);
-        const declarado = caja.cierreDeclarado ?? 0;
-        return { ...caja, esperado, declarado, diferencia: declarado - esperado };
-    });
+  const cajasConDatos = cajas.map((caja) => {
+    const esperado = caja.apertura + (saldoPorCaja.get(caja.id) ?? 0);
+    const declarado = caja.cierreDeclarado ?? 0;
+    return { ...caja, esperado, declarado, diferencia: declarado - esperado };
+  });
 
-    return (
-        <div className="max-w-4xl mx-auto p-8">
-        <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold">Historial de cajas</h1>
-            <Link href="/caja" className="text-sm text-blue-600 hover:underline">
-            ← Volver a caja
-            </Link>
+  const conDiferencia = cajasConDatos.filter((c) => c.diferencia !== 0).length;
+
+  return (
+    <div className="max-w-4xl px-8 py-7">
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Historial de cajas</h1>
+        <Link
+          href="/caja"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Volver a caja
+        </Link>
+      </div>
+      <p className="text-sm text-muted-foreground mb-6">
+        {cajasConDatos.length} {cajasConDatos.length === 1 ? "turno cerrado" : "turnos cerrados"}
+        {conDiferencia > 0 && <span className="text-danger"> · {conDiferencia} con diferencia</span>}
+      </p>
+
+      {cajasConDatos.length === 0 ? (
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">No hay cajas cerradas todavía.</p>
         </div>
-
-        {cajasConDatos.length === 0 ? (
-            <p className="text-muted-foreground">No hay cajas cerradas todavía.</p>
-        ) : (
-            <table className="w-full border-collapse text-sm">
+      ) : (
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <table className="w-full">
             <thead>
-                <tr className="border-b text-left">
-                {soyDueno && <th className="py-2 pr-4">Usuario</th>}
-                <th className="py-2 pr-4">Cerrada</th>
-                <th className="py-2 pr-4">Apertura</th>
-                <th className="py-2 pr-4">Esperado</th>
-                <th className="py-2 pr-4">Declarado</th>
-                <th className="py-2 pr-4">Diferencia</th>
-                </tr>
+              <tr className="border-b border-border">
+                {soyDueno && (
+                  <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                    USUARIO
+                  </th>
+                )}
+                <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                  CERRADA
+                </th>
+                <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                  APERTURA
+                </th>
+                <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                  ESPERADO
+                </th>
+                <th className="py-2.5 px-4 text-left text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                  DECLARADO
+                </th>
+                <th className="py-2.5 px-4 text-right text-[11px] font-normal tracking-wider text-muted-foreground/70">
+                  DIFERENCIA
+                </th>
+              </tr>
             </thead>
             <tbody>
-                {cajasConDatos.map((caja) => (
-                <tr key={caja.id} className="border-b">
-                    {soyDueno && <td className="py-2 pr-4">{caja.nombreUsuario}</td>}
-                    <td className="py-2 pr-4">
-                    {caja.cerradaEn
+              {cajasConDatos.map((caja) => (
+                <tr
+                  key={caja.id}
+                  className="border-b border-border/40 last:border-0 transition-colors duration-150 hover:bg-surface-2 cursor-pointer"
+                >
+                  {soyDueno && (
+                    <td className="p-0">
+                      <Link
+                        href={`/caja/historial/${caja.id}`}
+                        className="block py-2.5 px-4 text-sm text-muted-foreground"
+                      >
+                        {caja.nombreUsuario}
+                      </Link>
+                    </td>
+                  )}
+                  <td className="p-0">
+                    <Link
+                      href={`/caja/historial/${caja.id}`}
+                      className="block py-2.5 px-4 text-sm text-muted-foreground tabular whitespace-nowrap"
+                    >
+                      {caja.cerradaEn
                         ? new Date(caja.cerradaEn).toLocaleDateString("es-AR")
                         : "—"}
-                    </td>
-                    <td className="py-2 pr-4 tabular">{pesos(caja.apertura)}</td>
-                    <td className="py-2 pr-4 tabular">{pesos(caja.esperado)}</td>
-                    <td className="py-2 pr-4 tabular">{pesos(caja.declarado)}</td>
-                    <td className="py-2 pr-4">
-                    <span
-                        className={
-                        caja.diferencia === 0
-                            ? "text-success"
-                            : "text-danger font-medium"
-                        }
+                    </Link>
+                  </td>
+                  <td className="p-0">
+                    <Link
+                      href={`/caja/historial/${caja.id}`}
+                      className="block py-2.5 px-4 text-sm tabular"
                     >
-                        {caja.diferencia === 0 ? "OK" : pesos(caja.diferencia)}
-                    </span>
-                    </td>
+                      {pesos(caja.apertura)}
+                    </Link>
+                  </td>
+                  <td className="p-0">
+                    <Link
+                      href={`/caja/historial/${caja.id}`}
+                      className="block py-2.5 px-4 text-sm tabular"
+                    >
+                      {pesos(caja.esperado)}
+                    </Link>
+                  </td>
+                  <td className="p-0">
+                    <Link
+                      href={`/caja/historial/${caja.id}`}
+                      className="block py-2.5 px-4 text-sm tabular"
+                    >
+                      {pesos(caja.declarado)}
+                    </Link>
+                  </td>
+                  <td className="p-0">
+                    <Link
+                      href={`/caja/historial/${caja.id}`}
+                      className="flex justify-end py-2.5 px-4"
+                    >
+                      {caja.diferencia === 0 ? (
+                        <span className="text-xs text-success">OK</span>
+                      ) : (
+                        <span className="rounded-full border border-danger/30 bg-danger-soft px-2 py-0.5 text-xs font-medium text-danger tabular">
+                          {caja.diferencia < 0 ? "Faltan " : "Sobran "}
+                          {pesos(Math.abs(caja.diferencia))}
+                        </span>
+                      )}
+                    </Link>
+                  </td>
                 </tr>
-                ))}
+              ))}
             </tbody>
-            </table>
-        )}
+          </table>
         </div>
-    );
+      )}
+    </div>
+  );
 }

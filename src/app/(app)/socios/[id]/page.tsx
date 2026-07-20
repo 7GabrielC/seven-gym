@@ -183,8 +183,8 @@ export default async function FichaSocioPage({
             <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-medium">Historial de pagos</h2>
-                <Link href="/pagos/nuevo">
-                <Button size="sm">Cobrar cuota</Button>
+                <Link href={`/pagos/nuevo?socio=${socio.id}`}>
+                    <Button size="sm">Cobrar cuota</Button>
                 </Link>
             </div>
 
