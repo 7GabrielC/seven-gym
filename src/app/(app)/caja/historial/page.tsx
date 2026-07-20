@@ -17,7 +17,10 @@ export default async function HistorialCajaPage() {
 
   const condiciones = soyDueno
     ? isNotNull(sesionesCaja.cerradaEn)
-    : and(isNotNull(sesionesCaja.cerradaEn), eq(sesionesCaja.usuarioId, session.user.id));
+    : and(
+        isNotNull(sesionesCaja.cerradaEn),
+        eq(sesionesCaja.usuarioId, session.user.id),
+      );
 
   const cajas = await db
     .select({
@@ -51,7 +54,7 @@ export default async function HistorialCajaPage() {
     const actual = saldoPorCaja.get(m.sesionCajaId) ?? 0;
     saldoPorCaja.set(
       m.sesionCajaId,
-      m.tipo === "ingreso" ? actual + m.monto : actual - m.monto
+      m.tipo === "ingreso" ? actual + m.monto : actual - m.monto,
     );
   }
 
@@ -66,7 +69,9 @@ export default async function HistorialCajaPage() {
   return (
     <div className="max-w-4xl px-8 py-7">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Historial de cajas</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Historial de cajas
+        </h1>
         <Link
           href="/caja"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -75,13 +80,18 @@ export default async function HistorialCajaPage() {
         </Link>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
-        {cajasConDatos.length} {cajasConDatos.length === 1 ? "turno cerrado" : "turnos cerrados"}
-        {conDiferencia > 0 && <span className="text-danger"> · {conDiferencia} con diferencia</span>}
+        {cajasConDatos.length}{" "}
+        {cajasConDatos.length === 1 ? "turno cerrado" : "turnos cerrados"}
+        {conDiferencia > 0 && (
+          <span className="text-danger"> · {conDiferencia} con diferencia</span>
+        )}
       </p>
 
       {cajasConDatos.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">No hay cajas cerradas todavía.</p>
+          <p className="text-sm text-muted-foreground">
+            No hay cajas cerradas todavía.
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card overflow-hidden">

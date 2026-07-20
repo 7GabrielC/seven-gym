@@ -56,7 +56,8 @@ export default async function DetalleCajaPage({
 
   let acumulado = caja.apertura;
   const conAcumulado = movimientos.map((mov) => {
-    acumulado += mov.tipo === "ingreso" ? mov.montoCentavos : -mov.montoCentavos;
+    acumulado +=
+      mov.tipo === "ingreso" ? mov.montoCentavos : -mov.montoCentavos;
     return { ...mov, acumulado };
   });
 
@@ -70,7 +71,16 @@ export default async function DetalleCajaPage({
         href="/caja/historial"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-5"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         Historial de cajas
@@ -88,7 +98,9 @@ export default async function DetalleCajaPage({
           <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
             APERTURA
           </div>
-          <div className="text-lg font-semibold tabular">{pesos(caja.apertura)}</div>
+          <div className="text-lg font-semibold tabular">
+            {pesos(caja.apertura)}
+          </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
@@ -100,7 +112,9 @@ export default async function DetalleCajaPage({
           <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
             DECLARADO
           </div>
-          <div className="text-lg font-semibold tabular">{pesos(declarado)}</div>
+          <div className="text-lg font-semibold tabular">
+            {pesos(declarado)}
+          </div>
         </div>
         <div
           className={`rounded-lg border p-4 ${

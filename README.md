@@ -11,6 +11,7 @@ Sistema de administración interna para gimnasios: gestión de socios, cobro de 
 En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimnasio real.
 
 **Módulos funcionando:**
+
 - Socios: alta, listado con buscador en vivo, ficha individual, edición, baja (soft delete), estado derivado (activo / por vencer / vencido / inactivo)
 - Pagos: registro con cálculo de vencimiento, precio congelado, encadenamiento de períodos, anulación con auditoría
 - Planes y precios: cambio de precio con historial, activar/desactivar planes, creación de planes nuevos (solo dueño)
@@ -26,21 +27,21 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 
 ## Stack
 
-| Capa | Tecnología | Notas |
-|---|---|---|
-| Framework | Next.js 16 (App Router) | Server Components + Server Actions |
-| Lenguaje | TypeScript | Front y back, un solo lenguaje |
-| Estilos | Tailwind CSS v4 | |
-| Componentes | shadcn/ui (preset **Nova**) | Usa **Base UI**, no Radix. Sin `asChild`. |
-| Íconos | lucide-react | Íconos de las tarjetas del dashboard y listas |
-| Gráficos | Recharts | Área con degradado, donut, barras — todo vía tokens CSS |
-| Base de datos | PostgreSQL (Neon, cloud) | Región **São Paulo** (sa-east-1) |
-| ORM | Drizzle ORM + drizzle-kit | |
-| Driver DB | `@neondatabase/serverless` (Pool/websocket) | **No** `neon-http`: no soporta transacciones |
-| Auth | Better Auth | Adaptador Drizzle, email/password |
-| Fechas | date-fns | `addMonths` maneja el recorte al último día |
-| Tests | Vitest | |
-| Scripts | tsx | Para correr seeds |
+| Capa          | Tecnología                                  | Notas                                                   |
+| ------------- | ------------------------------------------- | ------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router)                     | Server Components + Server Actions                      |
+| Lenguaje      | TypeScript                                  | Front y back, un solo lenguaje                          |
+| Estilos       | Tailwind CSS v4                             |                                                         |
+| Componentes   | shadcn/ui (preset **Nova**)                 | Usa **Base UI**, no Radix. Sin `asChild`.               |
+| Íconos        | lucide-react                                | Íconos de las tarjetas del dashboard y listas           |
+| Gráficos      | Recharts                                    | Área con degradado, donut, barras — todo vía tokens CSS |
+| Base de datos | PostgreSQL (Neon, cloud)                    | Región **São Paulo** (sa-east-1)                        |
+| ORM           | Drizzle ORM + drizzle-kit                   |                                                         |
+| Driver DB     | `@neondatabase/serverless` (Pool/websocket) | **No** `neon-http`: no soporta transacciones            |
+| Auth          | Better Auth                                 | Adaptador Drizzle, email/password                       |
+| Fechas        | date-fns                                    | `addMonths` maneja el recorte al último día             |
+| Tests         | Vitest                                      |                                                         |
+| Scripts       | tsx                                         | Para correr seeds                                       |
 
 **Entorno de desarrollo:** Windows, Node 24, VS Code, 8GB RAM.
 
@@ -49,6 +50,7 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 ## Requisitos y setup
 
 ### Requisitos
+
 - Node.js 24+
 - Cuenta en [Neon](https://neon.com) (Postgres gratis)
 - Git
@@ -72,6 +74,7 @@ BETTER_AUTH_URL="http://localhost:3000"
 ```
 
 Para generar el secreto:
+
 ```bash
 npx @better-auth/cli@latest secret
 ```
@@ -166,6 +169,7 @@ src/
 **Better Auth:** `user` (con campo extra `rol`), `session`, `account`, `verification`.
 
 Relaciones clave:
+
 - `socios` 1—N `suscripciones` N—1 `planes`
 - `suscripciones` 1—N `pagos`
 - `planes` 1—N `precios_plan` (historial, sin `vigente_hasta`)
@@ -180,6 +184,7 @@ Relaciones clave:
 Modo claro y oscuro (toggle con `next-themes`, clase `.dark` en `<html>`). Todos los colores viven como variables CSS en `globals.css` — nunca se usa `text-gray-500` ni clases de color de Tailwind directas, siempre tokens.
 
 **Colores semánticos (fijos, significan algo — no se reasignan por estética):**
+
 - `success` / `success-soft`: plata que entra, resultado positivo, todo en orden
 - `warning` / `warning-soft`: por vencer, atención
 - `danger` / `danger-soft`: vencido, urgente, error
@@ -198,11 +203,12 @@ Modo claro y oscuro (toggle con `next-themes`, clase `.dark` en `<html>`). Todos
 
 Son **dos cosas distintas** y confundirlas rompe las dos. Es el concepto más importante del sistema.
 
-**Movimientos (finanzas)** responde *"¿qué entra y qué sale del negocio?"*. Incluye **todos los métodos** (efectivo y transferencia). Se acumula en el tiempo. Dos vistas:
+**Movimientos (finanzas)** responde _"¿qué entra y qué sale del negocio?"_. Incluye **todos los métodos** (efectivo y transferencia). Se acumula en el tiempo. Dos vistas:
+
 - **Ingresos** = cuotas (`pagos`) + otros ingresos (`otros_ingresos`)
 - **Egresos** = gastos (`gastos`)
 
-**Caja** responde *"¿cuadra el efectivo del cajón de este turno?"*. **Solo efectivo**, por turno, se abre y se cierra con arqueo.
+**Caja** responde _"¿cuadra el efectivo del cajón de este turno?"_. **Solo efectivo**, por turno, se abre y se cierra con arqueo.
 
 **Cómo se relacionan:** cada movimiento se registra **una sola vez** en Movimientos, con su método real. Si el método es efectivo, el sistema genera **automáticamente** el movimiento de caja correspondiente. Si es transferencia, no toca la caja.
 
@@ -239,16 +245,16 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 
 ## Roles y permisos
 
-| Acción | Dueño | Recepcionista |
-|---|---|---|
-| Socios: alta, edición, baja | ✓ | ✓ |
-| Cobrar cuotas | ✓ | ✓ |
-| Registrar ingresos y egresos | ✓ | ✓ |
-| Abrir/cerrar su caja, ajustes | ✓ | ✓ |
-| Ver historial de cajas | todas | solo las suyas |
-| Anular pagos | ✓ | ✗ |
-| Planes y precios | ✓ | ✗ |
-| Crear usuarios | ✓ | ✗ |
+| Acción                        | Dueño | Recepcionista  |
+| ----------------------------- | ----- | -------------- |
+| Socios: alta, edición, baja   | ✓     | ✓              |
+| Cobrar cuotas                 | ✓     | ✓              |
+| Registrar ingresos y egresos  | ✓     | ✓              |
+| Abrir/cerrar su caja, ajustes | ✓     | ✓              |
+| Ver historial de cajas        | todas | solo las suyas |
+| Anular pagos                  | ✓     | ✗              |
+| Planes y precios              | ✓     | ✗              |
+| Crear usuarios                | ✓     | ✗              |
 
 La protección se aplica en **tres niveles**: ocultar en el menú, redirigir en la página (`requerirDueno`), y rechazar en la Server Action. La seguridad real es la de la action.
 
@@ -261,6 +267,7 @@ npm test
 ```
 
 Hay tests de las dos funciones núcleo (las que un error silencioso rompería sin que nadie lo note):
+
 - `calcularVencimiento` — casos de borde: 31 de enero, bisiesto, trimestral con recorte único, plan en días
 - `calcularEstadoSocio` — bordes de los umbrales (7 días por vencer, 30 días recuperable)
 
@@ -269,6 +276,7 @@ Hay tests de las dos funciones núcleo (las que un error silencioso rompería si
 ## Documentación adicional
 
 En `/docs`:
+
 - `99-decisiones.md` — **leer antes de "corregir" algo que parece raro.** Registro de decisiones con sus razones, parches conscientes y deuda técnica anotada.
 - `98-ideas-futuras.md` — funcionalidades pensadas pero no implementadas, con el porqué.
 - `03-planes.md` — spec de planes y suscripciones (lógica de fechas en detalle).
@@ -288,6 +296,7 @@ En `/docs`:
 ## Procedimientos operativos
 
 **Pago cargado al socio equivocado, detectado con la caja ya cerrada:**
+
 1. El dueño anula el pago (motivo: "cargado al socio equivocado, era de X").
 2. El recepcionista cobra la cuota correcta al socio real.
 3. En la Caja, usa **"Registrar un ajuste de caja"** → egreso por el mismo monto, motivo: "Corrección: pago de X ya cobrado el [fecha], contabilizado en esa caja".

@@ -55,9 +55,16 @@ export function FormUsuario() {
 
       <div className="space-y-1.5">
         <Label>Rol</Label>
-        <Select name="rol" value={rol} onValueChange={(v) => setRol(v ?? "recepcionista")} required>
+        <Select
+          name="rol"
+          value={rol}
+          onValueChange={(v) => setRol(v ?? "recepcionista")}
+          required
+        >
           <SelectTrigger>
-            <SelectValue>{rol === "dueño" ? "Dueño" : "Recepcionista"}</SelectValue>
+            <SelectValue>
+              {rol === "dueño" ? "Dueño" : "Recepcionista"}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="recepcionista">Recepcionista</SelectItem>

@@ -15,7 +15,8 @@ export default async function UsuariosPage() {
         Usuarios del sistema
       </h1>
       <p className="text-sm text-muted-foreground mb-6">
-        {usuarios.length} en total · {duenos} {duenos === 1 ? "dueño" : "dueños"}
+        {usuarios.length} en total · {duenos}{" "}
+        {duenos === 1 ? "dueño" : "dueños"}
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -45,7 +46,9 @@ export default async function UsuariosPage() {
                       {iniciales}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{u.name}</div>
+                      <div className="text-sm font-medium truncate">
+                        {u.name}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {u.email}
                       </div>
