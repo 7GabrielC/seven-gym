@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
 import { TablaSocios } from "./tabla-socios";
 import { medir } from "@/lib/perf";
+import { hoyArgentina } from "@/lib/fecha-actual";
 
 export default async function SociosPage() {
   const sociosConEstado = await medir("socios: lista completa", async () => {
@@ -33,7 +34,7 @@ export default async function SociosPage() {
       .groupBy(socios.id)
       .orderBy(socios.apellido, socios.nombre);
 
-    const hoy = new Date();
+    const hoy = hoyArgentina();
 
     // El estado se calcula en memoria, sin tocar la base
     return filas.map((f) => ({

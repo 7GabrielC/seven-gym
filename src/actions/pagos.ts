@@ -18,6 +18,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { hoyArgentina, hoyArgentinaStr } from "@/lib/fecha-actual";
 
 export async function registrarPago(
   formData: FormData,
@@ -53,8 +54,8 @@ export async function registrarPago(
   }
 
   // 2. Traer el precio vigente del plan (el más reciente)
-  const hoy = new Date();
-  const hoyStr = hoy.toISOString().slice(0, 10);
+  const hoy = hoyArgentina();
+  const hoyStr = hoyArgentinaStr();
   const [precio] = await db
     .select()
     .from(preciosPlan)

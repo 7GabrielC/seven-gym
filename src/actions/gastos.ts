@@ -6,6 +6,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { hoyArgentinaStr } from "@/lib/fecha-actual";
 
 export async function registrarGasto(
   formData: FormData,
@@ -51,7 +52,7 @@ export async function registrarGasto(
   }
 
   const montoCentavos = Math.round(montoPesos * 100);
-  const hoyStr = new Date().toISOString().slice(0, 10);
+  const hoyStr = hoyArgentinaStr();
 
   await db.transaction(async (tx) => {
     const [nuevoGasto] = await tx

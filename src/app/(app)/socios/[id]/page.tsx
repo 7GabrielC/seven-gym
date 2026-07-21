@@ -9,6 +9,7 @@ import { BadgeEstado } from "@/components/badge-estado";
 import { BotonBaja } from "./boton-baja";
 import { BotonAnular } from "./boton-anular";
 import { requerirSesion } from "@/lib/session";
+import { hoyArgentina } from "@/lib/fecha-actual";
 
 function pesos(centavos: number): string {
   return (centavos / 100).toLocaleString("es-AR", {
@@ -67,9 +68,8 @@ export default async function FichaSocioPage({
     .limit(1);
 
   const estado: EstadoSocio | null = ultimaSuscripcion
-    ? calcularEstadoSocio(new Date(ultimaSuscripcion.hasta), new Date())
+    ? calcularEstadoSocio(new Date(ultimaSuscripcion.hasta), hoyArgentina())
     : null;
-
   const historialPagos = await db
     .select({
       id: pagos.id,

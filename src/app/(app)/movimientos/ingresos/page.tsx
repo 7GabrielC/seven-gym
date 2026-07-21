@@ -12,6 +12,7 @@ import { eq, and, isNull, gte, desc } from "drizzle-orm";
 import { FormOtroIngreso } from "./form-otro-ingreso";
 import { TablaMovimientos, type FilaMovimiento } from "../tabla-movimientos";
 import Link from "next/link";
+import { hoyArgentina } from "@/lib/fecha-actual";
 
 function pesos(centavos: number, decimales = 0): string {
   return (centavos / 100).toLocaleString("es-AR", {
@@ -24,8 +25,8 @@ function pesos(centavos: number, decimales = 0): string {
 export default async function IngresosPage() {
   await requerirSesion();
 
-  const hoy = new Date();
-  const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  const hoy = hoyArgentina();
+  const primerDiaMes = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1))
     .toISOString()
     .slice(0, 10);
 

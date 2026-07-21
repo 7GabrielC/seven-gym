@@ -6,6 +6,7 @@ import { eq, desc, lte, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { hoyArgentinaStr } from "@/lib/fecha-actual";
 
 async function verificarDueno(): Promise<string | null> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -32,7 +33,7 @@ export async function cambiarPrecio(
   const [plan] = await db.select().from(planes).where(eq(planes.id, planId));
   if (!plan) return { error: "Plan no encontrado." };
 
-  const hoyStr = new Date().toISOString().slice(0, 10);
+  const hoyStr = hoyArgentinaStr();
   const precioCentavos = Math.round(precioPesos * 100);
 
   // Si ya hay un precio con vigencia de hoy, lo reemplazamos.
@@ -118,7 +119,7 @@ export async function crearPlan(
   await db.insert(preciosPlan).values({
     planId: nuevoPlan.id,
     precioCentavos: Math.round(precioPesos * 100),
-    vigenteDesde: new Date().toISOString().slice(0, 10),
+    vigenteDesde: hoyArgentinaStr(),
   });
 
   revalidatePath("/planes");

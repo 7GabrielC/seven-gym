@@ -14,6 +14,7 @@ import {
   inArray,
 } from "drizzle-orm";
 import { calcularEstadoSocio, type EstadoSocio } from "@/lib/socios/estado";
+import { hoyArgentina, hoyArgentinaStr } from "@/lib/fecha-actual";
 
 type SocioConEstado = {
   id: number;
@@ -25,9 +26,9 @@ type SocioConEstado = {
 };
 
 export async function obtenerMetricas() {
-  const hoy = new Date();
-  const hoyStr = hoy.toISOString().slice(0, 10);
-  const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  const hoy = hoyArgentina();
+  const hoyStr = hoyArgentinaStr();
+  const primerDiaMes = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1))
     .toISOString()
     .slice(0, 10);
 

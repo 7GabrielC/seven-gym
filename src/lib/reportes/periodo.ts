@@ -1,3 +1,5 @@
+import { hoyArgentina } from "@/lib/fecha-actual";
+
 export type Periodo = {
   desde: string; // YYYY-MM-DD
   hasta: string; // YYYY-MM-DD
@@ -39,10 +41,11 @@ export function periodoRango(desde: string, hasta: string): Periodo {
   return { desde, hasta, etiqueta: `${desde} a ${hasta}` };
 }
 
+
 /** El mes actual */
 export function periodoMesActual(): Periodo {
-  const hoy = new Date();
-  return periodoMes(hoy.getFullYear(), hoy.getMonth());
+  const hoy = hoyArgentina();
+  return periodoMes(hoy.getUTCFullYear(), hoy.getUTCMonth());
 }
 
 /** El período inmediatamente anterior, del mismo largo */
@@ -64,9 +67,9 @@ export function periodoAnterior(p: Periodo): Periodo {
 /** Lista de meses disponibles para el selector, desde una fecha hasta hoy */
 export function mesesDisponibles(desdeAnio: number, desdeMes: number) {
   const lista: { valor: string; etiqueta: string }[] = [];
-  const hoy = new Date();
-  let anio = hoy.getFullYear();
-  let mes = hoy.getMonth();
+  const hoy = hoyArgentina();
+  let anio = hoy.getUTCFullYear();
+  let mes = hoy.getUTCMonth();
 
   while (anio > desdeAnio || (anio === desdeAnio && mes >= desdeMes)) {
     lista.push({

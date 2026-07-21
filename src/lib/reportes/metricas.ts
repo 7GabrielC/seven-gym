@@ -19,6 +19,7 @@ import {
   sql,
 } from "drizzle-orm";
 import type { Periodo } from "./periodo";
+import { hoyArgentina } from "@/lib/fecha-actual";
 
 export type ResumenFinanciero = {
   ingresosTotal: number;
@@ -241,9 +242,9 @@ export type PuntoMensual = {
 
 /** Serie de los últimos N meses (incluye el actual) */
 export async function serieMensual(meses = 6): Promise<PuntoMensual[]> {
-  const hoy = new Date();
+  const hoy = hoyArgentina();
   const desde = new Date(
-    Date.UTC(hoy.getFullYear(), hoy.getMonth() - (meses - 1), 1),
+    Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - (meses - 1), 1),
   )
     .toISOString()
     .slice(0, 10);
@@ -299,7 +300,7 @@ export async function serieMensual(meses = 6): Promise<PuntoMensual[]> {
   const serie: PuntoMensual[] = [];
 
   for (let i = meses - 1; i >= 0; i--) {
-    const d = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() - i, 1));
+    const d = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - i, 1));
     const clave = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
     mapa.set(clave, { ingresos: 0, egresos: 0 });
     serie.push({

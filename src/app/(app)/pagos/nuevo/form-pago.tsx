@@ -14,6 +14,7 @@ import {
 import { calcularEstadoSocio } from "@/lib/socios/estado";
 import { BadgeEstado } from "@/components/badge-estado";
 import { BuscadorSocio } from "./buscador-socio";
+import { hoyArgentina } from "@/lib/fecha-actual";
 
 type Socio = {
   id: number;
@@ -71,7 +72,7 @@ export function FormPago({
   );
 
   const estadoSocio = socioSeleccionado?.vencimiento
-    ? calcularEstadoSocio(new Date(socioSeleccionado.vencimiento), new Date())
+    ? calcularEstadoSocio(new Date(socioSeleccionado.vencimiento), hoyArgentina())
     : null;
 
   return (
