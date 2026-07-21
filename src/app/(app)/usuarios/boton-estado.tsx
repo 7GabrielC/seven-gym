@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export function BotonEstado({
   usuarioId,
@@ -36,6 +37,7 @@ export function BotonEstado({
       setError(resultado.error);
     } else {
       setAbierto(false);
+      toast.success(`${nombre} desactivado`);
     }
   }
 
@@ -43,6 +45,7 @@ export function BotonEstado({
     setCargando(true);
     await reactivarUsuario(usuarioId);
     setCargando(false);
+    toast.success(`${nombre} reactivado`);
   }
 
   if (esUsuarioActual) {

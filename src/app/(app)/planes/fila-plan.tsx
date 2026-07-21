@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cambiarPrecio, alternarActivo } from "@/actions/planes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 type Precio = { precioCentavos: number; vigenteDesde: string };
 
@@ -40,10 +41,12 @@ export function FilaPlan(plan: Props) {
     fd.append("precio", precio);
     const res = await cambiarPrecio(fd);
     setCargando(false);
-    if ("error" in res) setError(res.error);
-    else {
+    if ("error" in res) {
+      setError(res.error);
+    } else {
       setEditando(false);
       setPrecio("");
+      toast.success(`Precio de ${plan.nombre} actualizado`);
     }
   }
 
@@ -53,6 +56,7 @@ export function FilaPlan(plan: Props) {
     fd.append("planId", String(plan.id));
     await alternarActivo(fd);
     setCargando(false);
+    toast.success(plan.activo ? `${plan.nombre} desactivado` : `${plan.nombre} activado`);
   }
 
   return (
