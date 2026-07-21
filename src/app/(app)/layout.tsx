@@ -63,7 +63,7 @@ export default async function AppLayout({
               className="flex items-center gap-2 group"
               title="Ir a la caja"
             >
-              <span className="size-1.5 rounded-full bg-brand-accent shadow-[0_0_6px_var(--brand-accent)]" />
+              <span className="size-1.5 rounded-full bg-brand-accent shadow-[0_0_6px_var(--brand-accent)] animate-pulso" />
               <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
                 Caja abierta
               </span>

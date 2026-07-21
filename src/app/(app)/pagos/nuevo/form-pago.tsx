@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { registrarPago } from "@/actions/pagos";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,20 +47,30 @@ export function FormPago({
   planes: Plan[];
   socioInicial?: number | null;
 }) {
+  const router = useRouter();
   const [socioId, setSocioId] = useState<number | null>(socioInicial ?? null);
   const [planId, setPlanId] = useState("");
   const [metodo, setMetodo] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [confirmado, setConfirmado] = useState(false);
 
   async function manejarSubmit(formData: FormData) {
     setError("");
     setCargando(true);
     const resultado = await registrarPago(formData);
-    if (resultado?.error) {
+
+    if ("error" in resultado) {
       setError(resultado.error);
       setCargando(false);
+      return;
     }
+
+    // Éxito: mostramos la confirmación un instante antes de navegar
+    setConfirmado(true);
+    setTimeout(() => {
+      router.push(`/socios/${resultado.socioId}`);
+    }, 450);
   }
 
   const socioSeleccionado = useMemo(
@@ -72,7 +83,10 @@ export function FormPago({
   );
 
   const estadoSocio = socioSeleccionado?.vencimiento
-    ? calcularEstadoSocio(new Date(socioSeleccionado.vencimiento), hoyArgentina())
+    ? calcularEstadoSocio(
+        new Date(socioSeleccionado.vencimiento),
+        hoyArgentina(),
+      )
     : null;
 
   return (
@@ -146,10 +160,33 @@ export function FormPago({
 
           <Button
             type="submit"
-            className="w-full"
+            className={`w-full transition-colors duration-200 ${
+              confirmado ? "bg-success hover:bg-success" : ""
+            }`}
             disabled={cargando || !socioId}
           >
-            {cargando ? "Registrando..." : "Registrar pago"}
+            {confirmado ? (
+              <span className="flex items-center justify-center gap-1.5">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="animate-in zoom-in duration-200"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                Registrado
+              </span>
+            ) : cargando ? (
+              "Registrando..."
+            ) : (
+              "Registrar pago"
+            )}
           </Button>
         </form>
       </div>

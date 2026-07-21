@@ -97,6 +97,9 @@ export function AreaIngresos({ datos }: { datos: PuntoMensual[] }) {
             fill="url(#degradadoIngresos)"
             dot={{ r: 3, fill: "var(--primary)", strokeWidth: 0 }}
             activeDot={{ r: 4 }}
+            isAnimationActive={true}
+            animationDuration={900}
+            animationEasing="ease-out"
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -124,6 +127,9 @@ export function DonutSociosPorPlan({ datos }: { datos: Plan[] }) {
               outerRadius={64}
               paddingAngle={2}
               strokeWidth={0}
+              isAnimationActive={true}
+              animationDuration={700}
+              animationEasing="ease-out"
             >
               {datos.map((_, i) => (
                 <Cell key={i} fill={ESCALA_AZUL[i % ESCALA_AZUL.length]} />

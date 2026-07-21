@@ -15,14 +15,13 @@ import {
 } from "@/lib/fechas/vencimiento";
 import { eq, desc, lte, and, isNull, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { hoyArgentina, hoyArgentinaStr } from "@/lib/fecha-actual";
 
 export async function registrarPago(
   formData: FormData,
-): Promise<{ error: string } | void> {
+): Promise<{ error: string } | { ok: true; socioId: number }> {
   const socioId = Number(formData.get("socioId"));
   const planId = Number(formData.get("planId"));
   const metodo = formData.get("metodo") as "efectivo" | "transferencia";
@@ -154,7 +153,7 @@ export async function registrarPago(
   });
 
   revalidatePath("/socios");
-  redirect("/socios");
+  return { ok: true, socioId };
 }
 
 export async function anularPago(

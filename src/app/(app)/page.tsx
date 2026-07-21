@@ -17,6 +17,7 @@ import {
   UserPlus,
   XCircle,
 } from "lucide-react";
+import { NumeroAnimado } from "@/components/numero-animado";
 
 function pesos(centavos: number): string {
   return (centavos / 100).toLocaleString("es-AR", {
@@ -79,7 +80,7 @@ export default async function DashboardPage() {
                 SOCIOS ACTIVOS
               </div>
               <div className="text-2xl font-semibold tracking-tight tabular">
-                {metricas.totalActivos}
+                <NumeroAnimado valor={metricas.totalActivos} />
               </div>
               <div className="text-[11px] text-muted-foreground/60 mt-1">
                 Con membresía vigente
@@ -98,7 +99,10 @@ export default async function DashboardPage() {
                 INGRESOS DEL MES
               </div>
               <div className="text-2xl font-semibold tracking-tight tabular">
-                {pesos(metricas.ingresosMesCentavos)}
+                <NumeroAnimado
+                  valor={metricas.ingresosMesCentavos}
+                  formato="pesos"
+                />
               </div>
               {metricas.variacionIngresos !== null ? (
                 <div
@@ -126,7 +130,10 @@ export default async function DashboardPage() {
                 COBRADO HOY
               </div>
               <div className="text-2xl font-semibold tracking-tight tabular">
-                {pesos(metricas.cobradoHoyCentavos)}
+                <NumeroAnimado
+                  valor={metricas.cobradoHoyCentavos}
+                  formato="pesos"
+                />
               </div>
               <div className="text-[11px] text-muted-foreground/60 mt-1">
                 {metricas.cantidadPagosHoy === 0
@@ -147,7 +154,7 @@ export default async function DashboardPage() {
                 VENCIDOS
               </div>
               <div className="text-2xl font-semibold tracking-tight tabular">
-                {metricas.vencidos.length}
+                <NumeroAnimado valor={metricas.vencidos.length} />
               </div>
               <div className="text-[11px] text-muted-foreground/60 mt-1">
                 {metricas.vencidos.length === 0
@@ -201,12 +208,13 @@ export default async function DashboardPage() {
             </p>
           ) : (
             <ul>
-              {metricas.porVencer.map((s) => {
+              {metricas.porVencer.map((s, i) => {
                 const dias = diasHastaVencimiento(new Date(s.vencimiento), hoy);
                 return (
                   <li
                     key={s.id}
-                    className="grid grid-cols-[1fr_auto_72px] items-center gap-2 py-2 border-b border-border/40 last:border-0"
+                    style={{ animationDelay: `${i * 60}ms` }}
+                    className="animate-entrada grid grid-cols-[1fr_auto_72px] items-center gap-2 py-2 border-b border-border/40 last:border-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="size-7 rounded-full bg-warning-soft text-warning flex items-center justify-center shrink-0">
@@ -250,26 +258,27 @@ export default async function DashboardPage() {
                 const estilo =
                   a.tipo === "pago"
                     ? {
-                        bg: "bg-accent-teal-soft",
-                        color: "text-accent-teal",
+                        bg: "bg-success-soft",
+                        color: "text-success",
                         Icono: CreditCard,
                       }
                     : a.tipo === "alta"
                       ? {
-                          bg: "bg-accent-violet-soft",
-                          color: "text-accent-violet",
+                          bg: "bg-primary/10",
+                          color: "text-primary",
                           Icono: UserPlus,
                         }
                       : {
-                          bg: "bg-accent-rose-soft",
-                          color: "text-accent-rose",
+                          bg: "bg-danger-soft",
+                          color: "text-danger",
                           Icono: XCircle,
                         };
                 const Icono = estilo.Icono;
                 return (
                   <li
                     key={i}
-                    className="flex items-center justify-between gap-2 py-2 border-b border-border/40 last:border-0"
+                    style={{ animationDelay: `${i * 60}ms` }}
+                    className="animate-entrada flex items-center justify-between gap-2 py-2 border-b border-border/40 last:border-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div

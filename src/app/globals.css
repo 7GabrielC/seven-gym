@@ -204,4 +204,33 @@
   summary {
     cursor: pointer;
   }
+
+  @keyframes pulso-suave {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 6px var(--brand-accent);
+    }
+    50% {
+      opacity: 0.5;
+      box-shadow: 0 0 2px var(--brand-accent);
+    }
+  }
+  .animate-pulso {
+    animation: pulso-suave 2.5s ease-in-out infinite;
+  }
+
+  @keyframes entrada-fila {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-entrada {
+    animation: entrada-fila 300ms ease-out backwards;
+  }
 }
