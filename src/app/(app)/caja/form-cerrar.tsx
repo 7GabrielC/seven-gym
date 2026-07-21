@@ -33,12 +33,12 @@ export function FormCerrarCaja({ esperado }: { esperado: number }) {
 
   return (
     <form action={manejarSubmit} className="space-y-4">
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <p className="text-sm text-gray-500">Efectivo esperado en caja</p>
-        <p className="text-xl font-bold">{pesos(esperado)}</p>
+      <div className="rounded-lg border border-border bg-surface-2 p-4">
+        <p className="text-sm text-muted-foreground">Efectivo esperado en caja</p>
+        <p className="text-xl font-semibold tabular">{pesos(esperado)}</p>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="montoDeclarado">Efectivo real contado</Label>
         <Input
           id="montoDeclarado"
@@ -55,17 +55,17 @@ export function FormCerrarCaja({ esperado }: { esperado: number }) {
 
       {diferencia !== null && (
         <div
-          className={`rounded-lg p-3 text-sm ${
+          className={`rounded-lg p-3 text-sm border ${
             diferencia === 0
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-yellow-50 text-yellow-800 border border-yellow-200"
+              ? "bg-success-soft text-success border-success/25"
+              : "bg-warning-soft text-warning border-warning/25"
           }`}
         >
           {diferencia === 0 ? (
             <span>La caja cuadra perfecto.</span>
           ) : (
             <span>
-              Diferencia: {pesos(diferencia)}{" "}
+              Diferencia: {pesos(Math.abs(diferencia))}{" "}
               {diferencia > 0 ? "(sobra)" : "(falta)"}
             </span>
           )}
@@ -73,7 +73,7 @@ export function FormCerrarCaja({ esperado }: { esperado: number }) {
       )}
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+        <p className="text-sm text-danger bg-danger-soft border border-danger/25 rounded-md p-2">
           {error}
         </p>
       )}

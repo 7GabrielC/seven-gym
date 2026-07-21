@@ -83,7 +83,7 @@ export function AreaIngresos({ datos }: { datos: PuntoMensual[] }) {
             tickLine={false}
             tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
             tickFormatter={pesosCorto}
-            width={44}
+            width={52}
           />
           <Tooltip
             content={<TooltipArea />}
@@ -123,6 +123,8 @@ export function DonutSociosPorPlan({ datos }: { datos: Plan[] }) {
               data={datos}
               dataKey="cantidad"
               nameKey="plan"
+              cx="50%"
+              cy="50%"
               innerRadius={44}
               outerRadius={64}
               paddingAngle={2}

@@ -11,16 +11,18 @@ Sistema de administración interna para gimnasios: gestión de socios, cobro de 
 En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimnasio real.
 
 **Módulos funcionando:**
-- Socios: alta, listado con buscador en vivo, ficha individual, edición, baja (soft delete), estado derivado (activo / por vencer / vencido / inactivo)
+- Socios: alta, listado con buscador/filtros/paginación, ficha individual, edición, baja (soft delete) con cierre automático de suscripción, reactivación de socios dados de baja (con detección en vivo de DNI), estado derivado (activo / por vencer / vencido / inactivo)
 - Pagos: registro con cálculo de vencimiento, precio congelado, encadenamiento de períodos, anulación con auditoría
 - Planes y precios: cambio de precio con historial, activar/desactivar planes, creación de planes nuevos (solo dueño)
-- Movimientos: vista unificada de Ingresos (cuotas + otros ingresos) y Egresos (gastos con categorías), con métricas por método y totales del mes
-- Caja: apertura por turno, cierre con arqueo, ajustes excepcionales, historial filtrado por rol
+- Movimientos: vista unificada de Ingresos (cuotas + otros ingresos) y Egresos (gastos con categorías), con buscador, filtro por método, agrupación por día con límites expandibles
+- Caja: apertura por turno, cierre con arqueo, ajustes excepcionales, historial filtrado por rol, detalle de cada caja cerrada (movimientos + saldo acumulado, solo lectura)
+- Reportes (solo dueño): selector de período (mes o rango libre), resumen financiero con resultado, comparación vs período anterior, desglose por plan y por categoría, métricas de socios (altas/bajas/renovación), gráfico de 6 meses
 - Autenticación: login email/password, dos roles (dueño / recepcionista), sesiones, protección de páginas y acciones
-- Usuarios: creación de cuentas desde el sistema (solo dueño)
-- Dashboard: listas accionables (por vencer, vencidos) + métricas de ingresos
+- Usuarios: creación de cuentas, desactivación/reactivación (no se borran, se desactivan), protegido contra auto-desactivación y desactivar al último dueño
+- Dashboard: saludo según hora del día, listas accionables (por vencer, vencidos), métricas con variación mensual, gráfico de área e historial de socios por plan (donut)
+- Diseño: tema claro/oscuro completo, sistema de tokens, animaciones (números que cuentan, gráficos que se dibujan, entrada escalonada de filas, confirmaciones en botones, toasts)
 
-**Pendiente:** reportes (selector de período, comparaciones), observaciones, validación de formato (Zod), diseño visual.
+**Pendiente:** observaciones, validación de formato (Zod), mobile, paginación del lado del servidor (solo si el volumen crece mucho).
 
 ---
 
@@ -34,6 +36,7 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 | Componentes | shadcn/ui (preset **Nova**) | Usa **Base UI**, no Radix. Sin `asChild`. |
 | Íconos | lucide-react | Íconos de las tarjetas del dashboard y listas |
 | Gráficos | Recharts | Área con degradado, donut, barras — todo vía tokens CSS |
+| Notificaciones | Sonner | Toasts para acciones que no navegan (cambiar precio, activar/desactivar) |
 | Base de datos | PostgreSQL (Neon, cloud) | Región **São Paulo** (sa-east-1) |
 | ORM | Drizzle ORM + drizzle-kit | |
 | Driver DB | `@neondatabase/serverless` (Pool/websocket) | **No** `neon-http`: no soporta transacciones |
@@ -152,6 +155,7 @@ src/
 │   ├── auth-client.ts          # cliente para signIn/signOut
 │   ├── session.ts              # requerirSesion(), requerirDueno(), esDueno()
 │   ├── fechas/vencimiento.ts   # calcularVencimiento() + tests
+│   ├── fecha-actual.ts         # hoyArgentina(), hoyArgentinaStr(), saludoSegunHora() — SIEMPRE usar esto para "hoy"
 │   ├── socios/estado.ts        # calcularEstadoSocio() + tests
 │   └── dashboard/metricas.ts   # consultas del dashboard
 └── scripts/                    # seeds
@@ -280,10 +284,23 @@ En `/docs`:
 
 - **La carpeta del proyecto debe ser minúscula** (`seven-gym`). Con mayúsculas, npm rechaza el nombre y webpack tira `invariant expected layout router to be mounted`.
 - **shadcn con preset Nova usa Base UI**, no Radix. La prop `asChild` no existe: controlar diálogos con estado.
-- **Las fechas se guardan en UTC.** Un pago a las 00:37 (ART) aparece como 03:37 en la base. No es un bug.
+- **Las fechas se guardan en UTC.** Un pago a las 00:37 (ART) aparece como 03:37 en la base. No es un bug — ver el punto de zona horaria más abajo para el cuidado real que esto exige.
 - **`bufferutil` es necesario** en Windows + Node 24, o el driver websocket falla con `bufferUtil.mask is not a function`.
 - En modo `dev`, la navegación es lenta porque Next compila cada página bajo demanda. En producción (`build` + `start`) es instantánea.
-- **Nunca usar `new Date().toISOString().slice(0, 10)` para calcular "hoy".** El servidor corre en UTC; Argentina es UTC-3, así que después de las ~21hs esa expresión ya "cree" que es el día siguiente. Usar siempre `hoyArgentinaStr()` / `hoyArgentina()` de `src/lib/fecha-actual.ts` para cualquier cálculo de "la fecha de hoy" (filtros de mes en curso, fecha de un pago/gasto nuevo, período de reportes, estado de vencimiento). Columnas `timestamp` completas (como `creadoEn`, `cerradaEn`) no tienen este problema — el riesgo es solo al recortar a "solo el día".
+- **Nunca usar `new Date().toISOString().slice(0, 10)` para calcular "hoy".** El servidor corre en UTC; Argentina es UTC-3, así que después de las ~21hs esa expresión ya "cree" que es el día siguiente — esto afectó tanto lecturas (filtros de mes, estado de vencimiento) como escrituras (fecha guardada en pagos/gastos/precios) hasta que se corrigió en todo el sistema. Usar siempre `hoyArgentinaStr()` / `hoyArgentina()` de `src/lib/fecha-actual.ts`. Columnas `timestamp` completas (como `creadoEn`, `cerradaEn`) no tienen este problema — el riesgo es solo al recortar a "solo el día". Al leer un `Date` ya corregido por `hoyArgentina()`, usar métodos `getUTC*()` (no `get*()`), porque el objeto ya tiene la hora argentina codificada en su UTC interno.
+
+---
+
+## Animaciones
+
+Todo movimiento tiene un propósito (confirmar una acción, orientar, o comunicar magnitud) — nunca decorativo, para no cansar en un uso de 8hs diarias.
+
+- **`NumeroAnimado`** (`src/components/numero-animado.tsx`): cuenta desde el valor anterior al nuevo con `requestAnimationFrame` y easing `easeOutCubic`. Usado en las 4 tarjetas del dashboard. Recibe `formato="pesos"` como string, nunca una función (no se pueden pasar funciones de Server a Client Components).
+- **`.animate-pulso`** (`globals.css`): pulso lento (2.5s) en el punto de "Caja abierta".
+- **`.animate-entrada`** (`globals.css`): entrada con fade + leve traslación, con `animationDelay` calculado por índice (`i * 60ms`) para que las filas de una lista aparezcan en cascada. Usado en Vencimientos próximos y Actividad reciente.
+- **Gráficos**: `AreaIngresos` y `DonutSociosPorPlan` tienen `isAnimationActive` explícito con `animationDuration`/`animationEasing` propios de Recharts.
+- **Confirmación en botones**: el de "Cobrar cuota" muestra un check verde ~450ms antes de navegar (la Server Action ya no hace `redirect()`, devuelve `{ok, socioId}` y el Client Component decide cuándo navegar con `useRouter`).
+- **Toasts (Sonner)**: solo para acciones que **no** navegan (cambiar precio, activar/desactivar plan o usuario). Si la acción redirige, se usa el patrón de check en el botón en su lugar, para no duplicar la confirmación.
 
 ---
 

@@ -18,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { NumeroAnimado } from "@/components/numero-animado";
+import { hoyArgentina, saludoSegunHora } from "@/lib/fecha-actual";
 
 function pesos(centavos: number): string {
   return (centavos / 100).toLocaleString("es-AR", {
@@ -60,7 +61,7 @@ export default async function DashboardPage() {
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Buen día, {primerNombre}
+            {saludoSegunHora()}, {primerNombre}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Resumen general del gimnasio
@@ -177,7 +178,7 @@ export default async function DashboardPage() {
           </div>
           <AreaIngresos datos={serie} />
         </div>
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="rounded-lg border border-border bg-card p-4 flex flex-col">
           <div className="text-[11px] tracking-wider text-foreground mb-3">
             SOCIOS POR PLAN
           </div>
@@ -186,7 +187,9 @@ export default async function DashboardPage() {
               Sin socios activos.
             </p>
           ) : (
-            <DonutSociosPorPlan datos={planes} />
+            <div className="flex-1 flex items-center">
+              <DonutSociosPorPlan datos={planes} />
+            </div>
           )}
         </div>
       </div>
