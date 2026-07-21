@@ -2,12 +2,14 @@ import { requerirDueno } from "@/lib/session";
 import { db } from "@/db";
 import { user } from "@/db/schema";
 import { FormUsuario } from "./form-usuario";
+import { BotonEstado } from "./boton-estado";
 
 export default async function UsuariosPage() {
-  await requerirDueno();
+  const session = await requerirDueno();
 
   const usuarios = await db.select().from(user);
-  const duenos = usuarios.filter((u) => u.rol === "dueño").length;
+  const duenos = usuarios.filter((u) => u.rol === "dueño" && u.activo).length;
+  const activos = usuarios.filter((u) => u.activo).length;
 
   return (
     <div className="max-w-4xl px-8 py-7">
@@ -15,7 +17,7 @@ export default async function UsuariosPage() {
         Usuarios del sistema
       </h1>
       <p className="text-sm text-muted-foreground mb-6">
-        {usuarios.length} en total · {duenos}{" "}
+        {activos} activos de {usuarios.length} · {duenos}{" "}
         {duenos === 1 ? "dueño" : "dueños"}
       </p>
 
@@ -39,7 +41,9 @@ export default async function UsuariosPage() {
               return (
                 <li
                   key={u.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40 last:border-0"
+                  className={`flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40 last:border-0 transition-opacity duration-150 ${
+                    !u.activo ? "opacity-50" : ""
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="size-9 rounded-full bg-surface-2 border border-border flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
@@ -54,15 +58,29 @@ export default async function UsuariosPage() {
                       </div>
                     </div>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium shrink-0 ${
-                      esDueno
-                        ? "bg-primary/10 text-primary border border-primary/25"
-                        : "bg-muted text-muted-foreground border border-border"
-                    }`}
-                  >
-                    {esDueno ? "Dueño" : "Recepcionista"}
-                  </span>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        esDueno
+                          ? "bg-primary/10 text-primary border border-primary/25"
+                          : "bg-muted text-muted-foreground border border-border"
+                      }`}
+                    >
+                      {esDueno ? "Dueño" : "Recepcionista"}
+                    </span>
+                    {!u.activo && (
+                      <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                        Inactivo
+                      </span>
+                    )}
+                    <BotonEstado
+                      usuarioId={u.id}
+                      nombre={u.name}
+                      activo={u.activo}
+                      esUsuarioActual={u.id === session.user.id}
+                    />
+                  </div>
                 </li>
               );
             })}

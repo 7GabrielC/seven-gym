@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
@@ -10,24 +10,40 @@ import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("desactivado") === "1") {
+      setError("Tu cuenta fue desactivada. Contactá al dueño del gimnasio.");
+    }
+  }, [searchParams]);
 
   async function manejarLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setCargando(true);
 
-    const { error } = await authClient.signIn.email({ email, password });
+    const { data, error } = await authClient.signIn.email({ email, password });
 
     if (error) {
       setError("Email o contraseña incorrectos.");
       setCargando(false);
-    } else {
-      router.push("/");
+      return;
     }
+
+    // Better Auth ya autenticó; verificamos si la cuenta sigue activa.
+    if (data?.user && (data.user as { activo?: boolean }).activo === false) {
+      await authClient.signOut();
+      setError("Esta cuenta fue desactivada. Contactá al dueño del gimnasio.");
+      setCargando(false);
+      return;
+    }
+
+    router.push("/");
   }
 
   return (

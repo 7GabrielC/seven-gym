@@ -174,6 +174,7 @@ export const user = pgTable("user", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   rol: text("rol").notNull().default("recepcionista"),
+  activo: boolean("activo").notNull().default(true),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

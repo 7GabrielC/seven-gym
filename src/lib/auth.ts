@@ -17,6 +17,11 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "recepcionista",
       },
+      activo: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+      },
     },
   },
   plugins: [nextCookies()],

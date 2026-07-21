@@ -52,3 +52,52 @@ export async function crearUsuario(
   revalidatePath("/usuarios");
   return { ok: true };
 }
+
+export async function desactivarUsuario(
+  usuarioId: string,
+): Promise<{ error: string } | { ok: true }> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.rol !== "dueño") {
+    return { error: "No tenés permiso para hacer esto." };
+  }
+
+  if (usuarioId === session.user.id) {
+    return { error: "No podés desactivar tu propia cuenta." };
+  }
+
+  const [objetivo] = await db.select().from(user).where(eq(user.id, usuarioId));
+  if (!objetivo) {
+    return { error: "Usuario no encontrado." };
+  }
+
+  // Si es dueño, verificar que no sea el último dueño activo
+  if (objetivo.rol === "dueño") {
+    const duenosActivos = await db
+      .select()
+      .from(user)
+      .where(eq(user.rol, "dueño"));
+    const activos = duenosActivos.filter((u) => u.activo);
+    if (activos.length <= 1) {
+      return { error: "No se puede desactivar al único dueño activo." };
+    }
+  }
+
+  await db.update(user).set({ activo: false }).where(eq(user.id, usuarioId));
+
+  revalidatePath("/usuarios");
+  return { ok: true };
+}
+
+export async function reactivarUsuario(
+  usuarioId: string,
+): Promise<{ error: string } | { ok: true }> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.rol !== "dueño") {
+    return { error: "No tenés permiso para hacer esto." };
+  }
+
+  await db.update(user).set({ activo: true }).where(eq(user.id, usuarioId));
+
+  revalidatePath("/usuarios");
+  return { ok: true };
+}
