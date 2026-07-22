@@ -113,13 +113,13 @@ export function GraficoMensual({ datos }: { datos: Punto[] }) {
           />
           <Bar
             dataKey="ingresos"
-            fill="var(--chart-1)"
+            fill="var(--success)"
             radius={[3, 3, 0, 0]}
             maxBarSize={28}
           />
           <Bar
             dataKey="egresos"
-            fill="var(--chart-4)"
+            fill="var(--danger)"
             radius={[3, 3, 0, 0]}
             maxBarSize={28}
           />

@@ -44,24 +44,24 @@ export function SelectorPeriodo({
   }
 
   return (
-    <div className="border rounded-lg p-4 mb-8">
+    <div className="rounded-lg border border-border bg-card p-4 mb-8">
       <div className="flex gap-4 mb-4">
         <button
           onClick={() => setModo("mes")}
-          className={`text-sm pb-1 border-b-2 ${
+          className={`text-sm pb-1 border-b-2 transition-colors ${
             modo === "mes"
-              ? "border-gray-900 font-medium"
-              : "border-transparent text-gray-500"
+              ? "border-foreground font-medium text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           Por mes
         </button>
         <button
           onClick={() => setModo("rango")}
-          className={`text-sm pb-1 border-b-2 ${
+          className={`text-sm pb-1 border-b-2 transition-colors ${
             modo === "rango"
-              ? "border-gray-900 font-medium"
-              : "border-transparent text-gray-500"
+              ? "border-foreground font-medium text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           Rango de fechas

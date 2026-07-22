@@ -151,16 +151,16 @@ export default async function ReportesPage({
       {/* Gráfico */}
       <div className="rounded-lg border border-border bg-card p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[11px] tracking-wider text-muted-foreground/70">
+          <span className="text-[11px] tracking-wider text-foreground">
             ÚLTIMOS 6 MESES
           </span>
           <div className="flex items-center gap-4 text-[11px]">
             <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-sm bg-chart-1" />
+              <span className="size-2 rounded-sm bg-success" />
               <span className="text-muted-foreground">Ingresos</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-sm bg-chart-4" />
+              <span className="size-2 rounded-sm bg-danger" />
               <span className="text-muted-foreground">Egresos</span>
             </span>
             <span className="flex items-center gap-1.5">
@@ -176,7 +176,7 @@ export default async function ReportesPage({
         {/* Por plan */}
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <span className="text-[11px] tracking-wider text-muted-foreground/70">
+            <span className="text-[11px] tracking-wider text-foreground">
               FACTURACIÓN POR PLAN
             </span>
           </div>
@@ -220,7 +220,7 @@ export default async function ReportesPage({
         {/* Por categoría */}
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border">
-            <span className="text-[11px] tracking-wider text-muted-foreground/70">
+            <span className="text-[11px] tracking-wider text-foreground">
               EGRESOS POR CATEGORÍA
             </span>
           </div>
@@ -258,6 +258,12 @@ export default async function ReportesPage({
       </div>
 
       {/* Socios */}
+      {/* Socios */}
+      <div className="mb-2">
+        <span className="text-[11px] tracking-wider text-foreground">
+          SOCIOS EN EL PERÍODO
+        </span>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
@@ -265,6 +271,9 @@ export default async function ReportesPage({
           </div>
           <div className="text-xl font-semibold tracking-tight tabular">
             {socios.altas}
+          </div>
+          <div className="text-[11px] text-muted-foreground/60 mt-1">
+            Socios nuevos
           </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
@@ -274,6 +283,9 @@ export default async function ReportesPage({
           <div className="text-xl font-semibold tracking-tight tabular">
             {socios.bajas}
           </div>
+          <div className="text-[11px] text-muted-foreground/60 mt-1">
+            Se dieron de baja
+          </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="text-[11px] tracking-wider text-muted-foreground/70 mb-1.5">
@@ -281,6 +293,9 @@ export default async function ReportesPage({
           </div>
           <div className="text-xl font-semibold tracking-tight tabular">
             {socios.activosAlCierre}
+          </div>
+          <div className="text-[11px] text-muted-foreground/60 mt-1">
+            Con plan vigente al último día
           </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
@@ -293,7 +308,7 @@ export default async function ReportesPage({
               : "—"}
           </div>
           <div className="text-[11px] text-muted-foreground/60 mt-1 tabular">
-            {socios.renovaron} de {socios.vencieronEnPeriodo}
+            {socios.renovaron} de {socios.vencieronEnPeriodo} vencidos volvieron
           </div>
         </div>
       </div>

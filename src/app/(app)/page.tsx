@@ -138,8 +138,8 @@ export default async function DashboardPage() {
               </div>
               <div className="text-[11px] text-muted-foreground/60 mt-1">
                 {metricas.cantidadPagosHoy === 0
-                  ? "Todavía nadie pagó hoy"
-                  : `${metricas.cantidadPagosHoy} ${metricas.cantidadPagosHoy === 1 ? "cuota cobrada" : "cuotas cobradas"}`}
+                  ? "Todavía nada cobrado hoy"
+                  : `${metricas.cantidadPagosHoy} ${metricas.cantidadPagosHoy === 1 ? "ingreso" : "ingresos"}`}
               </div>
             </div>
             <div className="size-9 rounded-full bg-accent-sky-soft text-accent-sky flex items-center justify-center shrink-0">

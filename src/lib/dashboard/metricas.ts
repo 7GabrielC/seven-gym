@@ -1,5 +1,11 @@
 import { db } from "@/db";
-import { socios, suscripciones, pagos, planes } from "@/db/schema";
+import {
+  socios,
+  suscripciones,
+  pagos,
+  planes,
+  otrosIngresos,
+} from "@/db/schema";
 import {
   eq,
   isNull,
@@ -28,11 +34,13 @@ type SocioConEstado = {
 export async function obtenerMetricas() {
   const hoy = hoyArgentina();
   const hoyStr = hoyArgentinaStr();
-  const primerDiaMes = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1))
+  const primerDiaMes = new Date(
+    Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1),
+  )
     .toISOString()
     .slice(0, 10);
 
-  const [filas, totalMes, totalHoy] = await Promise.all([
+  const [filas, totalMes, totalHoyCuotas, totalHoyOtros] = await Promise.all([
     // Cada socio con su vencimiento, en una consulta
     db
       .select({
@@ -59,11 +67,19 @@ export async function obtenerMetricas() {
       .from(pagos)
       .where(and(eq(pagos.anulado, false), gte(pagos.fechaPago, primerDiaMes))),
 
-    // Cobrado hoy
+    // Cobrado hoy: cuotas
     db
       .select({ total: sum(pagos.montoCentavos), n: count() })
       .from(pagos)
       .where(and(eq(pagos.anulado, false), eq(pagos.fechaPago, hoyStr))),
+
+    // Cobrado hoy: otros ingresos
+    db
+      .select({ total: sum(otrosIngresos.montoCentavos), n: count() })
+      .from(otrosIngresos)
+      .where(
+        and(isNull(otrosIngresos.eliminadoEn), eq(otrosIngresos.fecha, hoyStr)),
+      ),
   ]);
 
   const sociosConEstado: SocioConEstado[] = filas
@@ -152,13 +168,19 @@ export async function obtenerMetricas() {
       ? Math.round(((ingresosMes - ingresosAnterior) / ingresosAnterior) * 100)
       : null;
 
+  const cobradoHoyCentavos =
+    Number(totalHoyCuotas[0]?.total ?? 0) +
+    Number(totalHoyOtros[0]?.total ?? 0);
+  const cantidadPagosHoy =
+    Number(totalHoyCuotas[0]?.n ?? 0) + Number(totalHoyOtros[0]?.n ?? 0);
+
   return {
     porVencer: porVencerConPlan,
     vencidos: vencidosConPlan,
     totalActivos: activos.length,
     ingresosMesCentavos: ingresosMes,
-    cobradoHoyCentavos: Number(totalHoy[0]?.total ?? 0),
-    cantidadPagosHoy: Number(totalHoy[0]?.n ?? 0),
+    cobradoHoyCentavos,
+    cantidadPagosHoy,
     variacionIngresos,
   };
 }
@@ -175,7 +197,7 @@ export type Actividad = {
 
 /** Cuántos socios activos tiene cada plan (según su suscripción vigente) */
 export async function sociosPorPlan(): Promise<SociosPorPlan[]> {
-  const hoyStr = new Date().toISOString().slice(0, 10);
+  const hoyStr = hoyArgentinaStr();
 
   const filas = await db
     .select({

@@ -19,6 +19,7 @@ function hora(fecha: Date): string {
   return new Date(fecha).toLocaleTimeString("es-AR", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 
