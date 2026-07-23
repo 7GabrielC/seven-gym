@@ -5,20 +5,28 @@ import { socios, suscripciones } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq, isNull, and } from "drizzle-orm";
+import { esquemaSocio } from "@/lib/validaciones/esquema-socios";
 
-export async function crearSocio(
-  formData: FormData,
-): Promise<{
+export async function crearSocio(formData: FormData): Promise<{
   error: string;
   socioBajaId?: number;
   nombreBaja?: string;
 } | void> {
-  const nombre = formData.get("nombre") as string;
-  const apellido = formData.get("apellido") as string;
-  const dni = formData.get("dni") as string;
-  const telefono = formData.get("telefono") as string;
-  const fechaNacimiento = formData.get("fechaNacimiento") as string;
-  const email = (formData.get("email") as string) || null;
+  const resultado = esquemaSocio.safeParse({
+    nombre: formData.get("nombre"),
+    apellido: formData.get("apellido"),
+    dni: formData.get("dni"),
+    telefono: formData.get("telefono"),
+    email: formData.get("email"),
+    fechaNacimiento: formData.get("fechaNacimiento"),
+  });
+
+  if (!resultado.success) {
+    return { error: resultado.error.issues[0].message };
+  }
+
+  const { nombre, apellido, dni, telefono, fechaNacimiento } = resultado.data;
+  const email = resultado.data.email || null;
 
   const [existente] = await db.select().from(socios).where(eq(socios.dni, dni));
 
@@ -52,14 +60,26 @@ export async function reactivarSocio(socioId: number) {
   redirect(`/socios/${socioId}`);
 }
 
-export async function editarSocio(formData: FormData) {
+export async function editarSocio(
+  formData: FormData,
+): Promise<{ error: string } | void> {
   const id = Number(formData.get("id"));
-  const nombre = formData.get("nombre") as string;
-  const apellido = formData.get("apellido") as string;
-  const dni = formData.get("dni") as string;
-  const telefono = formData.get("telefono") as string;
-  const fechaNacimiento = formData.get("fechaNacimiento") as string;
-  const email = (formData.get("email") as string) || null;
+
+  const resultado = esquemaSocio.safeParse({
+    nombre: formData.get("nombre"),
+    apellido: formData.get("apellido"),
+    dni: formData.get("dni"),
+    telefono: formData.get("telefono"),
+    email: formData.get("email"),
+    fechaNacimiento: formData.get("fechaNacimiento"),
+  });
+
+  if (!resultado.success) {
+    return { error: resultado.error.issues[0].message };
+  }
+
+  const { nombre, apellido, dni, telefono, fechaNacimiento } = resultado.data;
+  const email = resultado.data.email || null;
 
   await db
     .update(socios)

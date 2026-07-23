@@ -22,7 +22,7 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 - Dashboard: saludo según hora del día, listas accionables (por vencer, vencidos), métricas con variación mensual, gráfico de área e historial de socios por plan (donut)
 - Diseño: tema claro/oscuro completo, sistema de tokens, animaciones (números que cuentan, gráficos que se dibujan, entrada escalonada de filas, confirmaciones en botones, toasts)
 
-**Pendiente:** observaciones, validación de formato (Zod), mobile, paginación del lado del servidor (solo si el volumen crece mucho).
+**Pendiente:** observaciones, mobile, paginación del lado del servidor (solo si el volumen crece mucho), menú lateral colapsable.
 
 ---
 
@@ -37,6 +37,7 @@ En desarrollo activo. Proyecto de aprendizaje con intención de venta a un gimna
 | Íconos | lucide-react | Íconos de las tarjetas del dashboard y listas |
 | Gráficos | Recharts | Área con degradado, donut, barras — todo vía tokens CSS |
 | Notificaciones | Sonner | Toasts para acciones que no navegan (cambiar precio, activar/desactivar) |
+| Validación | Zod | Esquemas en `src/lib/validaciones/`, uno por dominio (ver sección abajo) |
 | Base de datos | PostgreSQL (Neon, cloud) | Región **São Paulo** (sa-east-1) |
 | ORM | Drizzle ORM + drizzle-kit | |
 | Driver DB | `@neondatabase/serverless` (Pool/websocket) | **No** `neon-http`: no soporta transacciones |
@@ -156,6 +157,7 @@ src/
 │   ├── session.ts              # requerirSesion(), requerirDueno(), esDueno()
 │   ├── fechas/vencimiento.ts   # calcularVencimiento() + tests
 │   ├── fecha-actual.ts         # hoyArgentina(), hoyArgentinaStr(), saludoSegunHora() — SIEMPRE usar esto para "hoy"
+│   ├── validaciones/           # esquemas de Zod, uno por dominio: esquema-socios.ts, esquema-usuarios.ts, esquema-planes.ts, esquema-movimientos.ts
 │   ├── socios/estado.ts        # calcularEstadoSocio() + tests
 │   └── dashboard/metricas.ts   # consultas del dashboard
 └── scripts/                    # seeds
@@ -195,6 +197,32 @@ Modo claro y oscuro (toggle con `next-themes`, clase `.dark` en `<html>`). Todos
 **Patrones repetidos:** tarjeta (`rounded-lg border border-border bg-card p-4`), número protagonista (`text-2xl font-semibold tracking-tight tabular`) con etiqueta chica arriba (`text-[11px] tracking-wider`), badge de días para vencimientos (componente `BadgeEstado`), punto de estado con halo (`size-1.5 rounded-full bg-brand-accent shadow-[0_0_6px_var(--brand-accent)]`).
 
 **Elemento firma:** los badges de vencimiento muestran los días ("4 días", "Vence hoy") en vez de una etiqueta genérica ("Por vencer"). Función `diasHastaVencimiento` en `src/lib/socios/estado.ts`.
+
+---
+
+## Validación (Zod)
+
+Todas las Server Actions que reciben datos de un formulario (`FormData`) validan con un esquema de Zod antes de tocar la base — nunca `as string` ni `if` sueltos para chequear formato.
+
+**Por qué:** la validación del navegador (`required`, bloqueo de teclas) es comodidad para el usuario normal, pero no es seguridad real — cualquiera puede mandar una petición directo al servidor sin pasar por el formulario. La única validación que protege de verdad es la que corre del lado del servidor. Zod además centraliza la regla (en vez de repetirla en `crear` y `editar`) y conecta la validación con el tipo de TypeScript automáticamente (`z.infer`), así `resultado.data` viene con el tipo garantizado, no una promesa sin verificar como el viejo `as string`.
+
+**Dónde viven:** `src/lib/validaciones/`, un archivo por dominio (`esquema-socios.ts`, `esquema-usuarios.ts`, `esquema-planes.ts`, `esquema-movimientos.ts`). Nunca en el mismo archivo que la Server Action, para poder compartir el esquema entre `crear` y `editar` sin mezclarlo con lógica de base de datos.
+
+**El patrón, siempre igual:**
+```typescript
+const resultado = esquemaX.safeParse({ campo: formData.get("campo"), ... });
+if (!resultado.success) return { error: resultado.error.issues[0].message };
+const { campo } = resultado.data;
+```
+
+**Reglas ya usadas, para no reinventarlas:**
+- Nombre/apellido: regex `soloLetras` (letras + acentos + ñ + espacios + guion/apóstrofe, para nombres compuestos y apellidos como "O'Connor").
+- Teléfono: regex que acepta dígitos, espacios, `+ ( ) -`.
+- DNI: `/^\d{7,8}$/`.
+- Montos de dinero: `z.coerce.number().positive()` (FormData da strings; `coerce` convierte y valida en un paso).
+- Valores de una lista cerrada (rol, método, categoría): `z.enum([...])`, nunca `z.string()` + comparación a mano.
+
+**Falta aplicar:** `pagos.ts` y `caja.ts` (mayormente reciben IDs y valores ya acotados por selects, menor prioridad).
 
 ---
 

@@ -6,6 +6,7 @@ import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { esquemaUsuario } from "@/lib/validaciones/esquema-usuarios";
 
 export async function crearUsuario(
   formData: FormData,
@@ -16,20 +17,18 @@ export async function crearUsuario(
     return { error: "No tenés permiso para crear usuarios." };
   }
 
-  const nombre = (formData.get("nombre") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim();
-  const password = formData.get("password") as string;
-  const rol = formData.get("rol") as string;
+  const resultado = esquemaUsuario.safeParse({
+    nombre: formData.get("nombre"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+    rol: formData.get("rol"),
+  });
 
-  if (!nombre || !email || !password) {
-    return { error: "Completá nombre, email y contraseña." };
+  if (!resultado.success) {
+    return { error: resultado.error.issues[0].message };
   }
-  if (password.length < 8) {
-    return { error: "La contraseña debe tener al menos 8 caracteres." };
-  }
-  if (rol !== "dueño" && rol !== "recepcionista") {
-    return { error: "Rol inválido." };
-  }
+
+  const { nombre, email, password, rol } = resultado.data;
 
   // Verificar que el email no exista ya
   const [existente] = await db.select().from(user).where(eq(user.email, email));

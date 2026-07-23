@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { hoyArgentinaStr } from "@/lib/fecha-actual";
+import { esquemaOtroIngreso } from "@/lib/validaciones/esquema-movimientos";
 
 export async function registrarOtroIngreso(
   formData: FormData,
@@ -14,14 +15,17 @@ export async function registrarOtroIngreso(
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Tu sesión expiró." };
 
-  const descripcion = (formData.get("descripcion") as string)?.trim();
-  const metodo = formData.get("metodo") as "efectivo" | "transferencia";
-  const montoPesos = Number(formData.get("monto"));
+  const resultado = esquemaOtroIngreso.safeParse({
+    descripcion: formData.get("descripcion"),
+    metodo: formData.get("metodo"),
+    monto: formData.get("monto"),
+  });
 
-  if (!descripcion) return { error: "La descripción es obligatoria." };
-  if (isNaN(montoPesos) || montoPesos <= 0) {
-    return { error: "Ingresá un monto válido mayor a cero." };
+  if (!resultado.success) {
+    return { error: resultado.error.issues[0].message };
   }
+
+  const { descripcion, metodo, monto: montoPesos } = resultado.data;
 
   // Si es en efectivo, necesita una caja abierta
   let cajaAbierta = null;

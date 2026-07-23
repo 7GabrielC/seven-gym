@@ -7,6 +7,10 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { hoyArgentinaStr } from "@/lib/fecha-actual";
+import {
+  esquemaCambiarPrecio,
+  esquemaCrearPlan,
+} from "@/lib/validaciones/esquema-planes";
 
 async function verificarDueno(): Promise<string | null> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -23,12 +27,16 @@ export async function cambiarPrecio(
   const errorPermiso = await verificarDueno();
   if (errorPermiso) return { error: errorPermiso };
 
-  const planId = Number(formData.get("planId"));
-  const precioPesos = Number(formData.get("precio"));
+  const resultado = esquemaCambiarPrecio.safeParse({
+    planId: formData.get("planId"),
+    precio: formData.get("precio"),
+  });
 
-  if (isNaN(precioPesos) || precioPesos <= 0) {
-    return { error: "Ingresá un precio válido mayor a cero." };
+  if (!resultado.success) {
+    return { error: resultado.error.issues[0].message };
   }
+
+  const { planId, precio: precioPesos } = resultado.data;
 
   const [plan] = await db.select().from(planes).where(eq(planes.id, planId));
   if (!plan) return { error: "Plan no encontrado." };
@@ -89,22 +97,25 @@ export async function crearPlan(
   const errorPermiso = await verificarDueno();
   if (errorPermiso) return { error: errorPermiso };
 
-  const nombre = (formData.get("nombre") as string)?.trim();
-  const duracionValor = Number(formData.get("duracionValor"));
-  const duracionUnidad = formData.get("duracionUnidad") as string;
-  const precioPesos = Number(formData.get("precio"));
-  const usoUnico = formData.get("usoUnico") === "si";
+  const resultado = esquemaCrearPlan.safeParse({
+    nombre: formData.get("nombre"),
+    duracionValor: formData.get("duracionValor"),
+    duracionUnidad: formData.get("duracionUnidad"),
+    precio: formData.get("precio"),
+    usoUnico: formData.get("usoUnico"),
+  });
 
-  if (!nombre) return { error: "El nombre es obligatorio." };
-  if (isNaN(duracionValor) || duracionValor <= 0) {
-    return { error: "La duración debe ser mayor a cero." };
+  if (!resultado.success) {
+    return { error: resultado.error.issues[0].message };
   }
-  if (duracionUnidad !== "mes" && duracionUnidad !== "dia") {
-    return { error: "Unidad de duración inválida." };
-  }
-  if (isNaN(precioPesos) || precioPesos <= 0) {
-    return { error: "Ingresá un precio válido." };
-  }
+
+  const {
+    nombre,
+    duracionValor,
+    duracionUnidad,
+    precio: precioPesos,
+  } = resultado.data;
+  const usoUnico = resultado.data.usoUnico === "si";
 
   const [nuevoPlan] = await db
     .insert(planes)
