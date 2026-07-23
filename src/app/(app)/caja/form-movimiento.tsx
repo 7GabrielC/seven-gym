@@ -36,7 +36,7 @@ export function FormAjuste() {
     return (
       <button
         onClick={() => setAbierto(true)}
-        className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+        className="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
       >
         Registrar un ajuste de caja
       </button>
@@ -44,11 +44,11 @@ export function FormAjuste() {
   }
 
   return (
-    <div className="border rounded-lg p-4 bg-gray-50">
+    <div className="rounded-lg border border-border bg-surface-2 p-4">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-medium text-sm">Ajuste de caja</h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Solo para correcciones excepcionales. Los ingresos y gastos normales
             se registran en Movimientos.
           </p>
@@ -58,14 +58,14 @@ export function FormAjuste() {
             setAbierto(false);
             setError("");
           }}
-          className="text-gray-400 hover:text-gray-600 text-sm"
+          className="text-muted-foreground/60 hover:text-foreground text-sm transition-colors"
         >
           ✕
         </button>
       </div>
 
       <form id="form-ajuste" action={manejarSubmit} className="space-y-3">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>Tipo</Label>
           <Select name="tipo" required>
             <SelectTrigger>
@@ -78,7 +78,7 @@ export function FormAjuste() {
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="monto">Monto</Label>
           <Input
             id="monto"
@@ -90,7 +90,7 @@ export function FormAjuste() {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="concepto">Motivo del ajuste</Label>
           <Input
             id="concepto"
@@ -101,7 +101,7 @@ export function FormAjuste() {
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+          <p className="text-sm text-danger bg-danger-soft border border-danger/25 rounded-md p-2">
             {error}
           </p>
         )}

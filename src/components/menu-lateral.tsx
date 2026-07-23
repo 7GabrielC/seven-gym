@@ -87,7 +87,15 @@ const items: ItemMenu[] = [
   },
 ];
 
-export function MenuLateral({ rol, nombre }: { rol: string; nombre: string }) {
+export function MenuLateral({
+  rol,
+  nombre,
+  cajaAbierta,
+}: {
+  rol: string;
+  nombre: string;
+  cajaAbierta: boolean;
+}) {
   const pathname = usePathname();
   const esDueno = rol === "dueño";
   const itemsVisibles = items.filter((item) => !item.soloDueno || esDueno);
@@ -167,7 +175,7 @@ export function MenuLateral({ rol, nombre }: { rol: string; nombre: string }) {
 
       {/* Usuario abajo */}
       <div className="border-t border-sidebar-border p-3 shrink-0">
-        <BarraUsuario nombre={nombre} rol={rol} />
+        <BarraUsuario nombre={nombre} rol={rol} cajaAbierta={cajaAbierta} />
       </div>
     </nav>
   );

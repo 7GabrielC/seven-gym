@@ -239,6 +239,7 @@ Estas reglas están implementadas y **no son negociables**. Detalle completo y r
 17. **Dar de baja a un socio cierra también su suscripción activa** (si tiene). Evita que quede una suscripción "vigente" huérfana de un socio inexistente.
 18. **Reactivar a un socio dado de baja NO revive su suscripción vieja.** Vuelve sin plan, como si fuera su primer día — coherente con que dejó de pagar y hay que cobrarle de nuevo. El DNI sigue siendo único incluso para dados de baja: si alguien intenta crear un socio con un DNI que pertenece a alguien de baja, el sistema ofrece reactivarlo en vez de bloquear o duplicar.
 19. **Los usuarios (recepcionistas/dueños) no se borran, se desactivan.** Un usuario inactivo no puede iniciar sesión, pero todos sus registros históricos (pagos, cajas, gastos) se conservan con su nombre intacto. Nadie puede desactivarse a sí mismo, y no se puede desactivar al único dueño activo del sistema.
+20. **Cerrar sesión NO cierra la caja abierta**, a propósito: un usuario puede desloguearse por una pausa (almuerzo, cambio de compu) y retomar el mismo turno después. Si tiene una caja abierta al cerrar sesión, se le muestra un aviso con la opción de ir a revisarla o salir igual — nunca se lo bloquea ni se le fuerza el cierre.
 
 ---
 

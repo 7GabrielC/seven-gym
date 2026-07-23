@@ -54,7 +54,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen">
-      <MenuLateral rol={rol} nombre={session.user.name} />
+      <MenuLateral rol={rol} nombre={session.user.name} cajaAbierta={!!cajaAbierta} />
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="flex items-center justify-between border-b border-border px-8 h-14 shrink-0">
           {cajaAbierta ? (

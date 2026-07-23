@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 
 export function BotonEstado({
   usuarioId,
@@ -54,7 +55,12 @@ export function BotonEstado({
 
   if (!activo) {
     return (
-      <Button size="sm" variant="outline" onClick={reactivar} disabled={cargando}>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={reactivar}
+        disabled={cargando}
+      >
         {cargando ? "Reactivando..." : "Reactivar"}
       </Button>
     );
@@ -69,10 +75,15 @@ export function BotonEstado({
       <Dialog open={abierto} onOpenChange={setAbierto}>
         <DialogContent showCloseButton={!cargando}>
           <DialogHeader>
-            <DialogTitle>Desactivar a {nombre}</DialogTitle>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="size-8 rounded-full bg-danger-soft text-danger flex items-center justify-center shrink-0">
+                <AlertTriangle size={16} strokeWidth={2} />
+              </div>
+              <DialogTitle>Desactivar a {nombre}</DialogTitle>
+            </div>
             <DialogDescription>
-              No va a poder iniciar sesión hasta que lo reactives. Sus pagos, cajas
-              y demás registros históricos se conservan intactos.
+              No va a poder iniciar sesión hasta que lo reactives. Sus pagos,
+              cajas y demás registros históricos se conservan intactos.
             </DialogDescription>
           </DialogHeader>
 

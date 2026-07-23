@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Seven — Gestión de gimnasio",
+  title: "Seven Gym",
   description: "Sistema de gestión para gimnasios",
 };
 
